@@ -45,3 +45,21 @@ export interface Payment {
   paidDate?: string;
   createdAt: string;
 }
+
+export interface Employee {
+  id: string;
+  firstName: string;
+  lastName: string;
+  hourlyRate: number;
+  createdAt: string;
+}
+
+export interface Timesheet {
+  id: string;
+  employeeId: string;
+  date: string;
+  hours: number;
+  status: 'due' | 'paid';
+  paidDate?: string;
+  createdAt: string;
+}

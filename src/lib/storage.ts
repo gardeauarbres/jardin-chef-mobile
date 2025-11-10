@@ -1,10 +1,12 @@
-import { Client, Quote, Site, Payment } from '@/types';
+import { Client, Quote, Site, Payment, Employee, Timesheet } from '@/types';
 
 const STORAGE_KEYS = {
   CLIENTS: 'paysagiste_clients',
   QUOTES: 'paysagiste_quotes',
   SITES: 'paysagiste_sites',
   PAYMENTS: 'paysagiste_payments',
+  EMPLOYEES: 'paysagiste_employees',
+  TIMESHEETS: 'paysagiste_timesheets',
 };
 
 // Generic storage functions
@@ -83,4 +85,38 @@ export const savePayment = (payment: Payment): void => {
 export const deletePayment = (id: string): void => {
   const payments = getPayments().filter(p => p.id !== id);
   setItems(STORAGE_KEYS.PAYMENTS, payments);
+};
+
+// Employees
+export const getEmployees = (): Employee[] => getItems<Employee>(STORAGE_KEYS.EMPLOYEES);
+export const saveEmployee = (employee: Employee): void => {
+  const employees = getEmployees();
+  const index = employees.findIndex(e => e.id === employee.id);
+  if (index >= 0) {
+    employees[index] = employee;
+  } else {
+    employees.push(employee);
+  }
+  setItems(STORAGE_KEYS.EMPLOYEES, employees);
+};
+export const deleteEmployee = (id: string): void => {
+  const employees = getEmployees().filter(e => e.id !== id);
+  setItems(STORAGE_KEYS.EMPLOYEES, employees);
+};
+
+// Timesheets
+export const getTimesheets = (): Timesheet[] => getItems<Timesheet>(STORAGE_KEYS.TIMESHEETS);
+export const saveTimesheet = (timesheet: Timesheet): void => {
+  const timesheets = getTimesheets();
+  const index = timesheets.findIndex(t => t.id === timesheet.id);
+  if (index >= 0) {
+    timesheets[index] = timesheet;
+  } else {
+    timesheets.push(timesheet);
+  }
+  setItems(STORAGE_KEYS.TIMESHEETS, timesheets);
+};
+export const deleteTimesheet = (id: string): void => {
+  const timesheets = getTimesheets().filter(t => t.id !== id);
+  setItems(STORAGE_KEYS.TIMESHEETS, timesheets);
 };

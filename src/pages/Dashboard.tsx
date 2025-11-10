@@ -27,7 +27,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       <header className="bg-primary text-primary-foreground p-6">
-        <h1 className="text-2xl font-bold">Gestion Paysagiste</h1>
+        <h1 className="text-2xl font-bold">Chantier Mika</h1>
         <p className="text-sm opacity-90 mt-1">Tableau de bord</p>
       </header>
 
