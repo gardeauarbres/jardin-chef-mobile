@@ -1,17 +1,30 @@
 import { useState, useMemo } from 'react';
-import { Plus, Search, Phone, Mail } from 'lucide-react';
+import { Plus, Search, Phone, Mail, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { getClients } from '@/lib/storage';
+import { getClients, deleteClient } from '@/lib/storage';
 import { Client } from '@/types';
 import MobileNav from '@/components/MobileNav';
 import { useNavigate } from 'react-router-dom';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
 
 const Clients = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const clients = useMemo(() => getClients(), []);
+  const [clients, setClients] = useState<Client[]>(getClients());
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [clientToDelete, setClientToDelete] = useState<string | null>(null);
 
   const filteredClients = useMemo(() => {
     return clients.filter(client =>
@@ -27,6 +40,22 @@ const Clients = () => {
 
   const handleEmail = (email: string) => {
     window.location.href = `mailto:${email}`;
+  };
+
+  const handleDeleteClick = (clientId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setClientToDelete(clientId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (clientToDelete) {
+      deleteClient(clientToDelete);
+      setClients(getClients());
+      toast.success('Client supprimé');
+      setDeleteDialogOpen(false);
+      setClientToDelete(null);
+    }
   };
 
   return (
@@ -69,7 +98,7 @@ const Clients = () => {
             </Card>
           ) : (
             filteredClients.map((client) => (
-              <Card key={client.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate(`/clients/${client.id}`)}>
+              <Card key={client.id} className="group cursor-pointer hover:shadow-glow hover:scale-[1.02] transition-all duration-200 animate-fade-in" onClick={() => navigate(`/clients/${client.id}`)}>
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -82,6 +111,7 @@ const Clients = () => {
                       <Button
                         size="icon"
                         variant="outline"
+                        className="hover:bg-primary hover:text-primary-foreground transition-colors"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleCall(client.phone);
@@ -92,12 +122,21 @@ const Clients = () => {
                       <Button
                         size="icon"
                         variant="outline"
+                        className="hover:bg-primary hover:text-primary-foreground transition-colors"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleEmail(client.email);
                         }}
                       >
                         <Mail className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        className="opacity-0 group-hover:opacity-100 hover:bg-destructive hover:text-destructive-foreground transition-all"
+                        onClick={(e) => handleDeleteClick(client.id, e)}
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
@@ -111,6 +150,23 @@ const Clients = () => {
           )}
         </div>
       </div>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer le client ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible. Le client sera définitivement supprimé.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <MobileNav />
     </div>

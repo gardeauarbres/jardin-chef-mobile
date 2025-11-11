@@ -1,14 +1,28 @@
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { getPayments, getClients, getSites } from '@/lib/storage';
+import { Button } from '@/components/ui/button';
+import { getPayments, getClients, getSites, deletePayment } from '@/lib/storage';
 import MobileNav from '@/components/MobileNav';
-import { Euro, Calendar } from 'lucide-react';
+import { Euro, Calendar, Trash2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
 
 const Payments = () => {
-  const payments = useMemo(() => getPayments(), []);
+  const [payments, setPayments] = useState(getPayments());
   const clients = useMemo(() => getClients(), []);
   const sites = useMemo(() => getSites(), []);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [paymentToDelete, setPaymentToDelete] = useState<string | null>(null);
 
   const getClientName = (clientId: string) => {
     const client = clients.find(c => c.id === clientId);
@@ -56,6 +70,22 @@ const Payments = () => {
       .reduce((sum, p) => sum + p.amount, 0);
   }, [payments]);
 
+  const handleDeleteClick = (paymentId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setPaymentToDelete(paymentId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (paymentToDelete) {
+      deletePayment(paymentToDelete);
+      setPayments(getPayments());
+      toast.success('Paiement supprimé');
+      setDeleteDialogOpen(false);
+      setPaymentToDelete(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <header className="bg-primary text-primary-foreground p-6">
@@ -88,16 +118,26 @@ const Payments = () => {
           </Card>
         ) : (
           sortedPayments.map((payment) => (
-            <Card key={payment.id} className="cursor-pointer hover:shadow-md transition-shadow">
+            <Card key={payment.id} className="group cursor-pointer hover:shadow-glow hover:scale-[1.02] transition-all duration-200 animate-fade-in">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-2">
-                  <div>
+                  <div className="flex-1">
                     <h3 className="font-semibold">{getSiteName(payment.siteId)}</h3>
                     <p className="text-sm text-muted-foreground">{getClientName(payment.clientId)}</p>
                   </div>
-                  <div className="text-right space-y-1">
-                    {getTypeBadge(payment.type)}
-                    {getStatusBadge(payment.status)}
+                  <div className="flex items-start gap-2">
+                    <div className="text-right space-y-1">
+                      {getTypeBadge(payment.type)}
+                      {getStatusBadge(payment.status)}
+                    </div>
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      className="opacity-0 group-hover:opacity-100 hover:bg-destructive hover:text-destructive-foreground transition-all h-8 w-8"
+                      onClick={(e) => handleDeleteClick(payment.id, e)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
 
@@ -119,6 +159,23 @@ const Payments = () => {
           ))
         )}
       </div>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer le paiement ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible. Le paiement sera définitivement supprimé.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <MobileNav />
     </div>

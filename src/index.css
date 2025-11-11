@@ -19,6 +19,7 @@ All colors MUST be HSL.
 
     --primary: 142 60% 45%;
     --primary-foreground: 0 0% 100%;
+    --primary-glow: 142 70% 55%;
 
     --secondary: 30 35% 92%;
     --secondary-foreground: 142 30% 15%;
@@ -46,6 +47,11 @@ All colors MUST be HSL.
     --info-foreground: 0 0% 100%;
 
     --radius: 0.75rem;
+
+    --shadow-soft: 0 2px 8px -2px hsl(142 30% 15% / 0.08);
+    --shadow-medium: 0 4px 12px -4px hsl(142 30% 15% / 0.12);
+    --shadow-strong: 0 8px 24px -8px hsl(142 30% 15% / 0.16);
+    --shadow-glow: 0 0 24px hsl(142 60% 45% / 0.15);
   }
 
   .dark {
@@ -60,6 +66,7 @@ All colors MUST be HSL.
 
     --primary: 142 55% 50%;
     --primary-foreground: 142 25% 10%;
+    --primary-glow: 142 65% 60%;
 
     --secondary: 142 15% 20%;
     --secondary-foreground: 0 0% 95%;
@@ -85,6 +92,11 @@ All colors MUST be HSL.
 
     --info: 200 65% 45%;
     --info-foreground: 0 0% 95%;
+
+    --shadow-soft: 0 2px 8px -2px hsl(0 0% 0% / 0.2);
+    --shadow-medium: 0 4px 12px -4px hsl(0 0% 0% / 0.3);
+    --shadow-strong: 0 8px 24px -8px hsl(0 0% 0% / 0.4);
+    --shadow-glow: 0 0 24px hsl(142 55% 50% / 0.25);
   }
 }
 

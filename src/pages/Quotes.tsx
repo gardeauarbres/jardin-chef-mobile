@@ -1,16 +1,29 @@
-import { useMemo } from 'react';
-import { Plus } from 'lucide-react';
+import { useState } from 'react';
+import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { getQuotes, getClients } from '@/lib/storage';
+import { getQuotes, getClients, deleteQuote } from '@/lib/storage';
 import MobileNav from '@/components/MobileNav';
 import { useNavigate } from 'react-router-dom';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
 
 const Quotes = () => {
   const navigate = useNavigate();
-  const quotes = useMemo(() => getQuotes(), []);
-  const clients = useMemo(() => getClients(), []);
+  const [quotes, setQuotes] = useState(getQuotes());
+  const [clients] = useState(getClients());
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [quoteToDelete, setQuoteToDelete] = useState<string | null>(null);
 
   const getClientName = (clientId: string) => {
     const client = clients.find(c => c.id === clientId);
@@ -26,6 +39,22 @@ const Quotes = () => {
     };
     const config = variants[status] || variants.draft;
     return <Badge variant={config.variant}>{config.label}</Badge>;
+  };
+
+  const handleDeleteClick = (quoteId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setQuoteToDelete(quoteId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (quoteToDelete) {
+      deleteQuote(quoteToDelete);
+      setQuotes(getQuotes());
+      toast.success('Devis supprimé');
+      setDeleteDialogOpen(false);
+      setQuoteToDelete(null);
+    }
   };
 
   return (
@@ -55,14 +84,24 @@ const Quotes = () => {
           </Card>
         ) : (
           quotes.map((quote) => (
-            <Card key={quote.id} className="cursor-pointer hover:shadow-md transition-shadow">
+            <Card key={quote.id} className="group cursor-pointer hover:shadow-glow hover:scale-[1.02] transition-all duration-200 animate-fade-in">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-2">
-                  <div>
+                  <div className="flex-1">
                     <h3 className="font-semibold">{quote.title}</h3>
                     <p className="text-sm text-muted-foreground">{getClientName(quote.clientId)}</p>
                   </div>
-                  {getStatusBadge(quote.status)}
+                  <div className="flex items-start gap-2">
+                    {getStatusBadge(quote.status)}
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      className="opacity-0 group-hover:opacity-100 hover:bg-destructive hover:text-destructive-foreground transition-all h-8 w-8"
+                      onClick={(e) => handleDeleteClick(quote.id, e)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
                 <div className="flex justify-between items-end mt-3">
                   <p className="text-xs text-muted-foreground">
@@ -75,6 +114,23 @@ const Quotes = () => {
           ))
         )}
       </div>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer le devis ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible. Le devis sera définitivement supprimé.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <MobileNav />
     </div>

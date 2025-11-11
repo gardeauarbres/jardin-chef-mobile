@@ -3,11 +3,21 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Euro, Clock, TrendingUp } from 'lucide-react';
-import { getEmployees, saveEmployee, getTimesheets, saveTimesheet } from '@/lib/storage';
+import { Plus, Euro, Clock, TrendingUp, Trash2 } from 'lucide-react';
+import { getEmployees, saveEmployee, getTimesheets, saveTimesheet, deleteEmployee, deleteTimesheet } from '@/lib/storage';
 import { Employee, Timesheet } from '@/types';
 import MobileNav from '@/components/MobileNav';
 import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const Employees = () => {
   const [employees, setEmployees] = useState<Employee[]>(getEmployees());
@@ -15,6 +25,8 @@ const Employees = () => {
   const [showAddEmployee, setShowAddEmployee] = useState(false);
   const [showAddTimesheet, setShowAddTimesheet] = useState(false);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState<string | null>(null);
 
   const [newEmployee, setNewEmployee] = useState({
     firstName: '',
@@ -98,6 +110,27 @@ const Employees = () => {
       saveTimesheet(updated);
       setTimesheets(getTimesheets());
       toast.success('Marqué comme payé');
+    }
+  };
+
+  const handleDeleteEmployee = (employeeId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEmployeeToDelete(employeeId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (employeeToDelete) {
+      // Delete all timesheets for this employee
+      const empTimesheets = timesheets.filter(t => t.employeeId === employeeToDelete);
+      empTimesheets.forEach(t => deleteTimesheet(t.id));
+      
+      deleteEmployee(employeeToDelete);
+      setEmployees(getEmployees());
+      setTimesheets(getTimesheets());
+      toast.success('Employé supprimé');
+      setDeleteDialogOpen(false);
+      setEmployeeToDelete(null);
     }
   };
 
@@ -276,21 +309,31 @@ const Employees = () => {
             const isExpanded = selectedEmployeeId === employee.id;
 
             return (
-              <Card key={employee.id}>
+              <Card key={employee.id} className="group hover:shadow-glow hover:scale-[1.01] transition-all duration-200 animate-fade-in">
                 <CardHeader 
                   className="cursor-pointer"
                   onClick={() => setSelectedEmployeeId(isExpanded ? '' : employee.id)}
                 >
                   <div className="flex justify-between items-start">
-                    <div>
+                    <div className="flex-1">
                       <CardTitle className="text-base">
                         {employee.firstName} {employee.lastName}
                       </CardTitle>
                       <p className="text-sm text-muted-foreground">{employee.hourlyRate}€/h</p>
                     </div>
-                    <div className="text-right">
-                      <div className="text-sm font-medium">{stats.totalHours}h</div>
-                      <div className="text-xs text-warning font-medium">{stats.totalDue}€ dû</div>
+                    <div className="flex items-start gap-3">
+                      <div className="text-right">
+                        <div className="text-sm font-medium">{stats.totalHours}h</div>
+                        <div className="text-xs text-warning font-medium">{stats.totalDue}€ dû</div>
+                      </div>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        className="opacity-0 group-hover:opacity-100 hover:bg-destructive hover:text-destructive-foreground transition-all h-8 w-8"
+                        onClick={(e) => handleDeleteEmployee(employee.id, e)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
                 </CardHeader>
@@ -342,6 +385,23 @@ const Employees = () => {
           )}
         </div>
       </div>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer l'employé ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible. L'employé et toutes ses heures seront définitivement supprimés.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <MobileNav />
     </div>
