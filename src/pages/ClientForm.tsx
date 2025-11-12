@@ -1,57 +1,125 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { saveClient, getClients } from '@/lib/storage';
-import { Client } from '@/types';
+import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 const ClientForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const isEdit = !!id;
+  const { user, loading } = useAuth();
+  const isEditing = Boolean(id);
 
-  const existingClient = isEdit ? getClients().find(c => c.id === id) : null;
-
-  const [formData, setFormData] = useState<Omit<Client, 'id' | 'createdAt'>>({
-    firstName: existingClient?.firstName || '',
-    lastName: existingClient?.lastName || '',
-    phone: existingClient?.phone || '',
-    email: existingClient?.email || '',
-    address: existingClient?.address || '',
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    phone: '',
+    email: '',
+    address: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const client: Client = {
-      id: id || crypto.randomUUID(),
-      ...formData,
-      createdAt: existingClient?.createdAt || new Date().toISOString(),
-    };
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate("/auth");
+    }
+  }, [user, loading, navigate]);
 
-    saveClient(client);
-    toast.success(isEdit ? 'Client mis à jour' : 'Client ajouté avec succès');
-    navigate('/clients');
+  useEffect(() => {
+    if (isEditing && user) {
+      fetchClient();
+    }
+  }, [id, user]);
+
+  const fetchClient = async () => {
+    if (!id || !user) return;
+
+    const { data, error } = await supabase
+      .from('clients')
+      .select('*')
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .single();
+
+    if (error) {
+      toast.error("Erreur lors du chargement du client");
+      navigate('/clients');
+    } else if (data) {
+      setFormData({
+        firstName: data.first_name,
+        lastName: data.last_name,
+        phone: data.phone,
+        email: data.email,
+        address: data.address,
+      });
+    }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    const clientData = {
+      user_id: user.id,
+      first_name: formData.firstName,
+      last_name: formData.lastName,
+      phone: formData.phone,
+      email: formData.email,
+      address: formData.address,
+    };
+
+    if (isEditing) {
+      const { error } = await supabase
+        .from('clients')
+        .update(clientData)
+        .eq('id', id);
+
+      if (error) {
+        toast.error("Erreur lors de la mise à jour");
+      } else {
+        toast.success('Client mis à jour');
+        navigate('/clients');
+      }
+    } else {
+      const { error } = await supabase
+        .from('clients')
+        .insert([clientData]);
+
+      if (error) {
+        toast.error("Erreur lors de la création");
+      } else {
+        toast.success('Client créé');
+        navigate('/clients');
+      }
+    }
+  };
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Chargement...</div>;
+  }
+
+  if (!user) {
+    return null;
+  }
+
   return (
-    <div className="min-h-screen bg-background pb-6">
-      <header className="bg-primary text-primary-foreground p-6 flex items-center gap-3">
+    <div className="min-h-screen bg-background pb-20">
+      <header className="bg-primary text-primary-foreground p-6">
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => navigate(-1)}
-          className="text-primary-foreground hover:bg-primary-foreground/10"
+          onClick={() => navigate('/clients')}
+          className="mb-2"
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div>
-          <h1 className="text-2xl font-bold">{isEdit ? 'Modifier' : 'Nouveau'} client</h1>
-        </div>
+        <h1 className="text-2xl font-bold">
+          {isEditing ? 'Modifier le client' : 'Nouveau client'}
+        </h1>
       </header>
 
       <div className="p-4">
@@ -81,7 +149,6 @@ const ClientForm = () => {
                   />
                 </div>
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="phone">Téléphone</Label>
                 <Input
@@ -92,7 +159,6 @@ const ClientForm = () => {
                   required
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -103,7 +169,6 @@ const ClientForm = () => {
                   required
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="address">Adresse</Label>
                 <Input
@@ -113,9 +178,8 @@ const ClientForm = () => {
                   required
                 />
               </div>
-
               <Button type="submit" className="w-full">
-                {isEdit ? 'Mettre à jour' : 'Ajouter'} le client
+                {isEditing ? 'Mettre à jour' : 'Créer le client'}
               </Button>
             </form>
           </CardContent>

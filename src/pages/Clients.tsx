@@ -1,10 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Search, Phone, Mail, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { getClients, deleteClient } from '@/lib/storage';
-import { Client } from '@/types';
 import MobileNav from '@/components/MobileNav';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -18,21 +16,58 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+
+interface Client {
+  id: string;
+  first_name: string;
+  last_name: string;
+  phone: string;
+  email: string;
+  address: string;
+}
 
 const Clients = () => {
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
-  const [clients, setClients] = useState<Client[]>(getClients());
+  const [clients, setClients] = useState<Client[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<string | null>(null);
 
-  const filteredClients = useMemo(() => {
-    return clients.filter(client =>
-      `${client.firstName} ${client.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.phone.includes(searchTerm)
-    );
-  }, [clients, searchTerm]);
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate("/auth");
+    }
+  }, [user, loading, navigate]);
+
+  useEffect(() => {
+    if (!user) return;
+    fetchClients();
+  }, [user]);
+
+  const fetchClients = async () => {
+    if (!user) return;
+    
+    const { data, error } = await supabase
+      .from('clients')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      toast.error("Erreur lors du chargement des clients");
+    } else {
+      setClients(data || []);
+    }
+  };
+
+  const filteredClients = clients.filter(client =>
+    `${client.first_name} ${client.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.phone.includes(searchTerm)
+  );
 
   const handleCall = (phone: string) => {
     window.location.href = `tel:${phone}`;
@@ -48,15 +83,32 @@ const Clients = () => {
     setDeleteDialogOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
-    if (clientToDelete) {
-      deleteClient(clientToDelete);
-      setClients(getClients());
+  const handleDeleteConfirm = async () => {
+    if (!clientToDelete) return;
+
+    const { error } = await supabase
+      .from('clients')
+      .delete()
+      .eq('id', clientToDelete);
+
+    if (error) {
+      toast.error("Erreur lors de la suppression");
+    } else {
       toast.success('Client supprimé');
-      setDeleteDialogOpen(false);
-      setClientToDelete(null);
+      fetchClients();
     }
+    
+    setDeleteDialogOpen(false);
+    setClientToDelete(null);
   };
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Chargement...</div>;
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -103,7 +155,7 @@ const Clients = () => {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <h3 className="font-semibold text-lg">
-                        {client.firstName} {client.lastName}
+                        {client.first_name} {client.last_name}
                       </h3>
                       <p className="text-sm text-muted-foreground mt-1">{client.address}</p>
                     </div>

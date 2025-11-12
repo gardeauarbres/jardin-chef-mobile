@@ -1,9 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { getQuotes, getClients, deleteQuote } from '@/lib/storage';
 import MobileNav from '@/components/MobileNav';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -17,17 +16,61 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+
+interface Quote {
+  id: string;
+  title: string;
+  description: string;
+  amount: number;
+  status: string;
+  created_at: string;
+  client_id: string;
+  clients: {
+    first_name: string;
+    last_name: string;
+  };
+}
 
 const Quotes = () => {
   const navigate = useNavigate();
-  const [quotes, setQuotes] = useState(getQuotes());
-  const [clients] = useState(getClients());
+  const { user, loading } = useAuth();
+  const [quotes, setQuotes] = useState<Quote[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [quoteToDelete, setQuoteToDelete] = useState<string | null>(null);
 
-  const getClientName = (clientId: string) => {
-    const client = clients.find(c => c.id === clientId);
-    return client ? `${client.firstName} ${client.lastName}` : 'Client inconnu';
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate("/auth");
+    }
+  }, [user, loading, navigate]);
+
+  useEffect(() => {
+    if (!user) return;
+    fetchQuotes();
+  }, [user]);
+
+  const fetchQuotes = async () => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('quotes')
+      .select(`
+        *,
+        clients (
+          first_name,
+          last_name
+        )
+      `)
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      toast.error("Erreur lors du chargement des devis");
+    } else {
+      setQuotes(data || []);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -47,15 +90,32 @@ const Quotes = () => {
     setDeleteDialogOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
-    if (quoteToDelete) {
-      deleteQuote(quoteToDelete);
-      setQuotes(getQuotes());
+  const handleDeleteConfirm = async () => {
+    if (!quoteToDelete) return;
+
+    const { error } = await supabase
+      .from('quotes')
+      .delete()
+      .eq('id', quoteToDelete);
+
+    if (error) {
+      toast.error("Erreur lors de la suppression");
+    } else {
       toast.success('Devis supprimé');
-      setDeleteDialogOpen(false);
-      setQuoteToDelete(null);
+      fetchQuotes();
     }
+
+    setDeleteDialogOpen(false);
+    setQuoteToDelete(null);
   };
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Chargement...</div>;
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -89,7 +149,9 @@ const Quotes = () => {
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
                     <h3 className="font-semibold">{quote.title}</h3>
-                    <p className="text-sm text-muted-foreground">{getClientName(quote.clientId)}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {quote.clients?.first_name} {quote.clients?.last_name}
+                    </p>
                   </div>
                   <div className="flex items-start gap-2">
                     {getStatusBadge(quote.status)}
@@ -105,7 +167,7 @@ const Quotes = () => {
                 </div>
                 <div className="flex justify-between items-end mt-3">
                   <p className="text-xs text-muted-foreground">
-                    {new Date(quote.createdAt).toLocaleDateString('fr-FR')}
+                    {new Date(quote.created_at).toLocaleDateString('fr-FR')}
                   </p>
                   <p className="text-lg font-bold text-primary">{quote.amount.toFixed(2)}€</p>
                 </div>

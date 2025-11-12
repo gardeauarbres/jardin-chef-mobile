@@ -1,34 +1,66 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, FileText, Hammer, Euro, TrendingUp } from 'lucide-react';
-import { getClients, getSites, getPayments, getQuotes } from '@/lib/storage';
-import { useMemo } from 'react';
+import { Users, FileText, Hammer, Euro, TrendingUp, LogOut } from 'lucide-react';
+import { useMemo, useEffect, useState } from 'react';
 import MobileNav from '@/components/MobileNav';
+import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
 
 const Dashboard = () => {
-  const stats = useMemo(() => {
-    const clients = getClients();
-    const sites = getSites();
-    const payments = getPayments();
-    const quotes = getQuotes();
+  const { user, loading, signOut } = useAuth();
+  const navigate = useNavigate();
+  const [stats, setStats] = useState({
+    totalClients: 0,
+    activeSites: 0,
+    totalPending: 0,
+    acceptedQuotes: 0,
+  });
 
-    const activeSites = sites.filter(s => s.status === 'active').length;
-    const pendingPayments = payments.filter(p => p.status === 'pending');
-    const totalPending = pendingPayments.reduce((sum, p) => sum + p.amount, 0);
-    const acceptedQuotes = quotes.filter(q => q.status === 'accepted').length;
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate("/auth");
+    }
+  }, [user, loading, navigate]);
 
-    return {
-      totalClients: clients.length,
-      activeSites,
-      totalPending,
-      acceptedQuotes,
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchStats = async () => {
+      const { data: clients } = await supabase.from('clients').select('*').eq('user_id', user.id);
+      const { data: quotes } = await supabase.from('quotes').select('*').eq('user_id', user.id);
+
+      setStats({
+        totalClients: clients?.length || 0,
+        activeSites: 0,
+        totalPending: 0,
+        acceptedQuotes: quotes?.filter(q => q.status === 'accepted').length || 0,
+      });
     };
-  }, []);
+
+    fetchStats();
+  }, [user]);
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Chargement...</div>;
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-background pb-20">
       <header className="bg-primary text-primary-foreground p-6">
-        <h1 className="text-2xl font-bold">Chantier Mika</h1>
-        <p className="text-sm opacity-90 mt-1">Tableau de bord</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Chantier Mika</h1>
+            <p className="text-sm opacity-90 mt-1">Tableau de bord</p>
+          </div>
+          <Button variant="secondary" size="icon" onClick={signOut}>
+            <LogOut className="h-5 w-5" />
+          </Button>
+        </div>
       </header>
 
       <div className="p-4 space-y-4">
