@@ -70,7 +70,11 @@ export function PhotoUpload({ siteId, onUploadSuccess }: PhotoUploadProps) {
       setDescription('');
       setType('before');
       setOpen(false);
-      onUploadSuccess?.();
+      
+      // Attendre un peu avant de rafraîchir pour laisser le temps à la DB de se mettre à jour
+      setTimeout(() => {
+        onUploadSuccess?.();
+      }, 500);
     } catch (error: any) {
       console.error('Erreur lors de l\'upload:', error);
       toast.error(error.message || 'Erreur lors de l\'upload de la photo');

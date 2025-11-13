@@ -44,10 +44,17 @@ const typeColors: Record<Photo['type'], string> = {
 };
 
 export function PhotoGallery({ siteId }: PhotoGalleryProps) {
-  const { data: photos, isLoading } = usePhotos(siteId);
+  const { data: photos, isLoading, refetch } = usePhotos(siteId);
   const deleteMutation = usePhotoDelete();
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const [deletePhotoId, setDeletePhotoId] = useState<string | null>(null);
+
+  // Debug: afficher les photos chargées
+  if (import.meta.env.DEV) {
+    console.log('[PhotoGallery] Photos chargées:', photos);
+    console.log('[PhotoGallery] Site ID:', siteId);
+    console.log('[PhotoGallery] Loading:', isLoading);
+  }
 
   const handleDelete = async () => {
     if (!deletePhotoId) return;
@@ -86,7 +93,7 @@ export function PhotoGallery({ siteId }: PhotoGalleryProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Photos du chantier</h3>
-        <PhotoUpload siteId={siteId} />
+        <PhotoUpload siteId={siteId} onUploadSuccess={() => refetch()} />
       </div>
 
       {/* Comparaison Avant/Après */}
@@ -232,6 +239,11 @@ interface PhotoCardProps {
 }
 
 function PhotoCard({ photo, onView, onDelete }: PhotoCardProps) {
+  // Debug: afficher l'URL de la photo
+  if (import.meta.env.DEV) {
+    console.log('[PhotoCard] Photo URL:', photo.url);
+  }
+
   return (
     <Card className="group relative overflow-hidden aspect-square">
       <img
@@ -239,6 +251,17 @@ function PhotoCard({ photo, onView, onDelete }: PhotoCardProps) {
         alt={photo.description || 'Photo'}
         className="w-full h-full object-cover cursor-pointer"
         onClick={onView}
+        onError={(e) => {
+          console.error('[PhotoCard] Erreur de chargement de l\'image:', photo.url);
+          console.error('[PhotoCard] Photo data:', photo);
+          // Afficher une image de placeholder en cas d'erreur
+          (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect width="200" height="200" fill="%23ddd"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999"%3EImage non disponible%3C/text%3E%3C/svg%3E';
+        }}
+        onLoad={() => {
+          if (import.meta.env.DEV) {
+            console.log('[PhotoCard] Image chargée avec succès:', photo.url);
+          }
+        }}
       />
       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
         <Button

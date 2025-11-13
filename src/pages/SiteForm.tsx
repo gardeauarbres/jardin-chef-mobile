@@ -444,10 +444,19 @@ const SiteForm = () => {
         </Card>
 
         {/* Galerie photo - seulement en mode édition */}
-        {id && (
+        {id ? (
           <Card className="mt-4">
             <CardContent className="pt-6">
               <PhotoGallery siteId={id} />
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="mt-4">
+            <CardContent className="pt-6">
+              <div className="text-center text-muted-foreground">
+                <p className="mb-2">Créez d'abord le chantier pour ajouter des photos</p>
+                <p className="text-sm">Après la création, vous pourrez uploader des photos</p>
+              </div>
             </CardContent>
           </Card>
         )}

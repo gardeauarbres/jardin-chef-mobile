@@ -10,14 +10,20 @@ Pour utiliser la fonctionnalité de galerie photo, vous devez :
 
 ## 🗄️ Étape 1 : Migration SQL
 
-Exécutez la migration suivante dans votre projet Supabase :
+Exécutez les migrations suivantes dans votre projet Supabase **dans l'ordre** :
 
+### Migration 1 : Table photos
 **Fichier** : `supabase/migrations/20250114000000_add_photos_table.sql`
 
 1. Allez sur https://supabase.com/dashboard/project/qppuntwgpglsbdppejhw/editor
 2. Cliquez sur **SQL Editor**
 3. Copiez le contenu du fichier de migration
 4. Collez-le dans l'éditeur et cliquez sur **Run**
+
+### Migration 2 : Politiques Storage (IMPORTANT - après avoir créé le bucket)
+**Fichier** : `supabase/migrations/20250114000001_setup_photos_storage.sql`
+
+⚠️ **Exécutez cette migration APRÈS avoir créé le bucket Storage** (étape 2)
 
 ## 📦 Étape 2 : Créer le Bucket Storage
 
@@ -33,62 +39,14 @@ Exécutez la migration suivante dans votre projet Supabase :
 
 ## 🔒 Étape 3 : Configurer les Politiques de Sécurité
 
-Après avoir créé le bucket, configurez les politiques RLS :
+**IMPORTANT** : Exécutez la migration `20250114000001_setup_photos_storage.sql` qui configure automatiquement toutes les politiques nécessaires.
 
-### Politique 1 : Les utilisateurs peuvent uploader leurs propres photos
+Cette migration configure :
+- ✅ Les politiques RLS pour la table `photos`
+- ✅ Les politiques Storage pour le bucket `photos`
+- ✅ Les index pour optimiser les requêtes
 
-```sql
-CREATE POLICY "Users can upload their own photos"
-ON storage.objects FOR INSERT
-TO authenticated
-WITH CHECK (
-  bucket_id = 'photos' AND
-  (storage.foldername(name))[1] = auth.uid()::text
-);
-```
-
-### Politique 2 : Les utilisateurs peuvent voir leurs propres photos
-
-```sql
-CREATE POLICY "Users can view their own photos"
-ON storage.objects FOR SELECT
-TO authenticated
-USING (
-  bucket_id = 'photos' AND
-  (storage.foldername(name))[1] = auth.uid()::text
-);
-```
-
-### Politique 3 : Les utilisateurs peuvent supprimer leurs propres photos
-
-```sql
-CREATE POLICY "Users can delete their own photos"
-ON storage.objects FOR DELETE
-TO authenticated
-USING (
-  bucket_id = 'photos' AND
-  (storage.foldername(name))[1] = auth.uid()::text
-);
-```
-
-### Politique 4 : Les photos sont publiques en lecture (pour l'affichage)
-
-```sql
-CREATE POLICY "Photos are publicly readable"
-ON storage.objects FOR SELECT
-TO public
-USING (bucket_id = 'photos');
-```
-
-## 📝 Comment appliquer les politiques
-
-1. Allez sur **Storage** → **Policies** dans Supabase
-2. Sélectionnez le bucket `photos`
-3. Cliquez sur **New Policy**
-4. Pour chaque politique :
-   - Choisissez le type (INSERT, SELECT, DELETE)
-   - Copiez le SQL correspondant ci-dessus
-   - Cliquez sur **Review** puis **Save policy**
+**Alternative manuelle** : Si vous préférez configurer manuellement, allez sur **Storage** → **Policies** dans Supabase et créez les politiques une par une (voir le fichier de migration pour le SQL exact).
 
 ## ✅ Vérification
 
