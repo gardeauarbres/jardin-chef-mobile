@@ -263,34 +263,47 @@ const QuoteForm = () => {
             )}
           </div>
           {id && form.watch("title") && (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => {
-                const formValues = form.getValues();
-                const selectedClient = clients.find(c => c.id === formValues.clientId);
-                exportQuoteToPDF({
-                  id: id,
-                  title: formValues.title,
-                  description: formValues.description,
-                  amount: parseFloat(formValues.amount || "0"),
-                  deposit_percentage: formValues.depositPercentage ? parseFloat(formValues.depositPercentage) : null,
-                  deposit_amount: formValues.depositPercentage && formValues.amount
-                    ? (parseFloat(formValues.amount) * parseFloat(formValues.depositPercentage)) / 100
-                    : null,
-                  status: formValues.status,
-                  created_at: new Date().toISOString(),
-                  client: selectedClient ? {
-                    first_name: selectedClient.first_name,
-                    last_name: selectedClient.last_name,
-                  } : undefined,
-                });
-                toast.success('Devis exporté en PDF');
-              }}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Exporter PDF
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  const formValues = form.getValues();
+                  const selectedClient = clients.find(c => c.id === formValues.clientId);
+                  exportQuoteToPDF({
+                    id: id,
+                    title: formValues.title,
+                    description: formValues.description,
+                    amount: parseFloat(formValues.amount || "0"),
+                    deposit_percentage: formValues.depositPercentage ? parseFloat(formValues.depositPercentage) : null,
+                    deposit_amount: formValues.depositPercentage && formValues.amount
+                      ? (parseFloat(formValues.amount) * parseFloat(formValues.depositPercentage)) / 100
+                      : null,
+                    status: formValues.status,
+                    created_at: new Date().toISOString(),
+                    client: selectedClient ? {
+                      first_name: selectedClient.first_name,
+                      last_name: selectedClient.last_name,
+                    } : undefined,
+                  });
+                  toast.success('Devis exporté en PDF');
+                }}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Exporter PDF
+              </Button>
+              {form.watch("status") === "accepted" && (
+                <InvoiceForm
+                  quoteId={id}
+                  trigger={
+                    <Button variant="outline" size="sm">
+                      <FileText className="h-4 w-4 mr-2" />
+                      Créer facture
+                    </Button>
+                  }
+                />
+              )}
+            </div>
           )}
         </div>
       </header>
