@@ -11,6 +11,7 @@ import { useClients, useQuotes, useSites, usePayments } from '@/hooks/useSupabas
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/components/ThemeProvider';
+import { ThemeColorPicker } from '@/components/ThemeColorPicker';
 import { GlobalSearch } from '@/components/GlobalSearch';
 import { DataExport } from '@/components/DataExport';
 import {
