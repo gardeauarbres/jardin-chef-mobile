@@ -225,9 +225,10 @@ const Dashboard = () => {
                   <div className="hidden md:block">
                     <DataExport />
                   </div>
+                  <ThemeColorPicker />
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="secondary" size="icon">
+                      <Button variant="secondary" size="icon" className="min-h-[44px] min-w-[44px]">
                         {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
                       </Button>
                     </DropdownMenuTrigger>
@@ -245,7 +246,7 @@ const Dashboard = () => {
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                  <Button variant="secondary" size="icon" onClick={signOut}>
+                  <Button variant="secondary" size="icon" onClick={signOut} className="min-h-[44px] min-w-[44px]">
                     <LogOut className="h-5 w-5" />
                   </Button>
                 </div>
