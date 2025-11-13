@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
+import { usePayments, useSupabaseMutation } from '@/hooks/useSupabaseQuery';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 
