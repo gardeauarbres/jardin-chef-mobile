@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Search, Phone, Mail, Trash2 } from 'lucide-react';
+import { Plus, Search, Phone, Mail, Trash2, Download, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
 import { Pagination } from '@/components/Pagination';
 import { SortableList, SortOption } from '@/components/SortableList';
 import { DateRangeFilter } from '@/components/DateFilter';
@@ -22,7 +23,11 @@ import {
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { useClients, useSupabaseMutation } from '@/hooks/useSupabaseQuery';
+import { useInvoices, useSendInvoiceEmail } from '@/hooks/useInvoices';
+import { exportInvoiceToPDF } from '@/lib/pdfExport';
 import { supabase } from '@/integrations/supabase/client';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale/fr';
 
 interface Client {
   id: string;
@@ -31,6 +36,17 @@ interface Client {
   phone: string;
   email: string;
   address: string;
+  created_at?: string;
+}
+
+interface PaidInvoice {
+  id: string;
+  invoice_number: string;
+  title: string;
+  total_amount: number;
+  paid_date: string | null;
+  issue_date: string;
+  due_date: string;
 }
 
 const ITEMS_PER_PAGE = 10;
@@ -44,9 +60,12 @@ const Clients = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
+  const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
 
   // Utiliser le hook optimisé avec cache
   const { data: clients = [], isLoading, error } = useClients();
+  const { data: allInvoices = [] } = useInvoices();
+  const sendEmailMutation = useSendInvoiceEmail();
 
   // Mutation optimisée pour la suppression
   const deleteMutation = useSupabaseMutation(
@@ -127,6 +146,74 @@ const Clients = () => {
   const handleDeleteConfirm = () => {
     if (!clientToDelete) return;
     deleteMutation.mutate(clientToDelete);
+  };
+
+  // Obtenir les factures payées d'un client
+  const getPaidInvoicesForClient = (clientId: string) => {
+    return allInvoices.filter(
+      (invoice) => invoice.client_id === clientId && invoice.status === 'paid'
+    );
+  };
+
+  // Toggle l'expansion d'un client
+  const toggleClientExpansion = (clientId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpandedClients((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(clientId)) {
+        newSet.delete(clientId);
+      } else {
+        newSet.add(clientId);
+      }
+      return newSet;
+    });
+  };
+
+  // Télécharger une facture
+  const handleDownloadInvoice = (invoice: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    exportInvoiceToPDF({
+      id: invoice.id,
+      invoice_number: invoice.invoice_number,
+      title: invoice.title,
+      description: invoice.description || undefined,
+      amount: invoice.amount,
+      tax_rate: invoice.tax_rate || undefined,
+      tax_amount: invoice.tax_amount,
+      total_amount: invoice.total_amount,
+      issue_date: invoice.issue_date,
+      due_date: invoice.due_date,
+      status: invoice.status,
+      client: invoice.clients
+        ? {
+            first_name: invoice.clients.first_name,
+            last_name: invoice.clients.last_name,
+            email: invoice.clients.email,
+            address: invoice.clients.address,
+          }
+        : undefined,
+    });
+    toast.success('Facture exportée en PDF');
+  };
+
+  // Envoyer une facture par email
+  const handleSendInvoiceEmail = async (invoice: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!invoice.clients?.email) {
+      toast.error('Le client n\'a pas d\'email');
+      return;
+    }
+
+    try {
+      await sendEmailMutation.mutateAsync(invoice.id);
+      toast.success(`Facture envoyée par email à ${invoice.clients.email}`);
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : 'Erreur lors de l\'envoi de l\'email'
+      );
+    }
   };
 
   if (loading || isLoading) {
@@ -228,56 +315,134 @@ const Clients = () => {
               </CardContent>
             </Card>
           ) : (
-            paginatedClients.map((client) => (
-              <Card key={client.id} className="group cursor-pointer hover:shadow-glow hover:scale-[1.02] transition-all duration-200 animate-fade-in" onClick={() => navigate(`/clients/${client.id}`)}>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg">
-                        {client.first_name} {client.last_name}
-                      </h3>
-                      <p className="text-sm text-muted-foreground mt-1">{client.address}</p>
+            paginatedClients.map((client) => {
+              const paidInvoices = getPaidInvoicesForClient(client.id);
+              const isExpanded = expandedClients.has(client.id);
+
+              return (
+                <Card key={client.id} className="group hover:shadow-glow transition-all duration-200 animate-fade-in">
+                  <CardContent className="p-4">
+                    <div 
+                      className="cursor-pointer"
+                      onClick={() => navigate(`/clients/${client.id}`)}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-lg">
+                            {client.first_name} {client.last_name}
+                          </h3>
+                          <p className="text-sm text-muted-foreground mt-1">{client.address}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="hover:bg-primary hover:text-primary-foreground transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCall(client.phone);
+                            }}
+                          >
+                            <Phone className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="hover:bg-primary hover:text-primary-foreground transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEmail(client.email);
+                            }}
+                          >
+                            <Mail className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="opacity-0 group-hover:opacity-100 hover:bg-destructive hover:text-destructive-foreground transition-all"
+                            onClick={(e) => handleDeleteClick(client.id, e)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="mt-3 flex gap-3 text-sm">
+                        <span className="text-muted-foreground">{client.phone}</span>
+                        <span className="text-muted-foreground">{client.email}</span>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="hover:bg-primary hover:text-primary-foreground transition-colors"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleCall(client.phone);
-                        }}
-                      >
-                        <Phone className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="hover:bg-primary hover:text-primary-foreground transition-colors"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEmail(client.email);
-                        }}
-                      >
-                        <Mail className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="opacity-0 group-hover:opacity-100 hover:bg-destructive hover:text-destructive-foreground transition-all"
-                        onClick={(e) => handleDeleteClick(client.id, e)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="mt-3 flex gap-3 text-sm">
-                    <span className="text-muted-foreground">{client.phone}</span>
-                    <span className="text-muted-foreground">{client.email}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+
+                    {/* Section Factures payées */}
+                    {paidInvoices.length > 0 && (
+                      <div className="mt-4 pt-4 border-t">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full justify-between p-0 h-auto"
+                          onClick={(e) => toggleClientExpansion(client.id, e)}
+                        >
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4" />
+                            <span className="font-medium">
+                              {paidInvoices.length} facture{paidInvoices.length > 1 ? 's' : ''} payée{paidInvoices.length > 1 ? 's' : ''}
+                            </span>
+                            <Badge variant="secondary" className="bg-green-100 text-green-800">
+                              Payée{paidInvoices.length > 1 ? 's' : ''}
+                            </Badge>
+                          </div>
+                          {isExpanded ? (
+                            <ChevronUp className="h-4 w-4" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4" />
+                          )}
+                        </Button>
+
+                        {isExpanded && (
+                          <div className="mt-3 space-y-2">
+                            {paidInvoices.map((invoice) => (
+                              <div
+                                key={invoice.id}
+                                className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                              >
+                                <div className="flex-1">
+                                  <div className="font-medium text-sm">{invoice.title}</div>
+                                  <div className="text-xs text-muted-foreground mt-1">
+                                    N° {invoice.invoice_number} •{' '}
+                                    {format(new Date(invoice.issue_date), 'PPP', { locale: fr })} •{' '}
+                                    {invoice.total_amount.toFixed(2)} €
+                                  </div>
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={(e) => handleDownloadInvoice(invoice, e)}
+                                    title="Télécharger le PDF"
+                                  >
+                                    <Download className="h-4 w-4" />
+                                  </Button>
+                                  {invoice.clients?.email && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={(e) => handleSendInvoiceEmail(invoice, e)}
+                                      disabled={sendEmailMutation.isPending}
+                                      title="Envoyer par email"
+                                    >
+                                      <Mail className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })
           )}
                 </div>
 

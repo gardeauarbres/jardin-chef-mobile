@@ -305,3 +305,106 @@ export function useGenerateInvoiceFromQuote() {
   });
 }
 
+/**
+ * Hook pour envoyer une facture par email
+ */
+export function useSendInvoiceEmail() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (invoiceId: string) => {
+      if (!user) throw new Error('User not authenticated');
+
+      // Récupérer la facture avec toutes les relations
+      const { data: invoice, error: invoiceError } = await supabase
+        .from('invoices')
+        .select(`
+          *,
+          clients (
+            id,
+            first_name,
+            last_name,
+            email,
+            address,
+            phone
+          )
+        `)
+        .eq('id', invoiceId)
+        .eq('user_id', user.id)
+        .single();
+
+      if (invoiceError) throw invoiceError;
+      if (!invoice) throw new Error('Facture non trouvée');
+      if (!invoice.clients) throw new Error('Client non trouvé');
+      if (!invoice.clients.email) throw new Error('Le client n\'a pas d\'email');
+
+      // Récupérer le nom de l'utilisateur
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('first_name, last_name')
+        .eq('id', user.id)
+        .single();
+
+      const userName = profile
+        ? `${profile.first_name} ${profile.last_name}`
+        : undefined;
+
+      // Générer le PDF en base64
+      const { generateInvoicePDFBase64 } = await import('@/lib/pdfExport');
+      const pdfBase64 = generateInvoicePDFBase64(
+        {
+          id: invoice.id,
+          invoice_number: invoice.invoice_number,
+          title: invoice.title,
+          description: invoice.description,
+          amount: invoice.amount,
+          tax_rate: invoice.tax_rate,
+          tax_amount: invoice.tax_amount,
+          total_amount: invoice.total_amount,
+          issue_date: invoice.issue_date,
+          due_date: invoice.due_date,
+          status: invoice.status,
+          client: {
+            first_name: invoice.clients.first_name,
+            last_name: invoice.clients.last_name,
+            email: invoice.clients.email,
+            phone: invoice.clients.phone || undefined,
+            address: invoice.clients.address || undefined,
+          },
+        },
+        userName
+      );
+
+      // Envoyer l'email
+      const { sendInvoiceEmail } = await import('@/lib/emailService');
+      await sendInvoiceEmail({
+        to: invoice.clients.email,
+        invoiceNumber: invoice.invoice_number,
+        clientName: `${invoice.clients.first_name} ${invoice.clients.last_name}`,
+        pdfBase64,
+        pdfFileName: `facture-${invoice.invoice_number}.pdf`,
+        amount: invoice.total_amount,
+        dueDate: invoice.due_date,
+      });
+
+      // Mettre à jour le statut de la facture
+      const { error: updateError } = await supabase
+        .from('invoices')
+        .update({
+          status: 'sent',
+          sent_date: new Date().toISOString(),
+        })
+        .eq('id', invoiceId)
+        .eq('user_id', user.id);
+
+      if (updateError) throw updateError;
+
+      return invoice;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+    },
+  });
+}
+

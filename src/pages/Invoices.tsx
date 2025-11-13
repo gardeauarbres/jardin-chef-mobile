@@ -12,7 +12,7 @@ import { SortableList, SortOption } from '@/components/SortableList';
 import { DateRangeFilter } from '@/components/DateFilter';
 import MobileNav from '@/components/MobileNav';
 import { useAuth } from '@/hooks/useAuth';
-import { useInvoices, useInvoiceDelete, InvoiceWithRelations } from '@/hooks/useInvoices';
+import { useInvoices, useInvoiceDelete, useSendInvoiceEmail, InvoiceWithRelations } from '@/hooks/useInvoices';
 import { InvoiceForm } from '@/components/InvoiceForm';
 import {
   AlertDialog,
@@ -61,6 +61,7 @@ export default function Invoices() {
   const { user, loading: authLoading } = useAuth();
   const { data: invoices, isLoading } = useInvoices();
   const deleteMutation = useInvoiceDelete();
+  const sendEmailMutation = useSendInvoiceEmail();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -185,6 +186,24 @@ export default function Invoices() {
         : undefined,
     });
     toast.success('Facture exportée en PDF');
+  };
+
+  const handleSendEmail = async (invoice: InvoiceWithRelations) => {
+    if (!invoice.clients?.email) {
+      toast.error('Le client n\'a pas d\'email');
+      return;
+    }
+
+    try {
+      await sendEmailMutation.mutateAsync(invoice.id);
+      toast.success(`Facture envoyée par email à ${invoice.clients.email}`);
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : 'Erreur lors de l\'envoi de l\'email'
+      );
+    }
   };
 
   if (authLoading || isLoading) {
@@ -385,13 +404,27 @@ export default function Invoices() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleExportPDF(invoice)}
+                            title="Télécharger le PDF"
                           >
                             <Download className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleSendEmail(invoice)}
+                            disabled={sendEmailMutation.isPending || !invoice.clients?.email}
+                            title={
+                              invoice.clients?.email
+                                ? "Envoyer par email"
+                                : "Le client n'a pas d'email"
+                            }
+                          >
+                            <Mail className="h-4 w-4" />
                           </Button>
                           <InvoiceForm
                             invoice={invoice}
                             trigger={
-                              <Button variant="outline" size="sm">
+                              <Button variant="outline" size="sm" title="Modifier">
                                 <FileText className="h-4 w-4" />
                               </Button>
                             }
@@ -403,6 +436,7 @@ export default function Invoices() {
                               setInvoiceToDelete(invoice.id);
                               setDeleteDialogOpen(true);
                             }}
+                            title="Supprimer"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
