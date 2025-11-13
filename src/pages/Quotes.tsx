@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Trash2, Search, Filter } from 'lucide-react';
+import { Plus, Trash2, Search, Filter, Download } from 'lucide-react';
+import { exportQuoteToPDF } from '@/lib/pdfExport';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -228,6 +229,25 @@ const Quotes = () => {
                   </div>
                   <div className="flex items-start gap-2">
                     {getStatusBadge(quote.status)}
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      className="opacity-0 group-hover:opacity-100 hover:bg-primary hover:text-primary-foreground transition-all h-8 w-8"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        exportQuoteToPDF({
+                          ...quote,
+                          client: quote.clients ? {
+                            first_name: quote.clients.first_name,
+                            last_name: quote.clients.last_name,
+                          } : undefined,
+                        });
+                        toast.success('Devis exporté en PDF');
+                      }}
+                      title="Exporter en PDF"
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
                     <Button
                       size="icon"
                       variant="outline"

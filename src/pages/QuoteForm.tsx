@@ -10,10 +10,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Download } from "lucide-react";
 import { quoteSchema, QuoteFormData } from "@/lib/validations";
 import { useAuth } from "@/hooks/useAuth";
 import { useSupabaseMutation } from "@/hooks/useSupabaseQuery";
+import { exportQuoteToPDF } from "@/lib/pdfExport";
 import MobileNav from "@/components/MobileNav";
 
 interface Client {
@@ -234,9 +235,41 @@ const QuoteForm = () => {
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-2xl font-bold">
-          {id ? "Modifier le devis" : "Nouveau devis"}
-        </h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold">
+            {id ? "Modifier le devis" : "Nouveau devis"}
+          </h1>
+          {id && form.watch("title") && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                const formValues = form.getValues();
+                const selectedClient = clients.find(c => c.id === formValues.clientId);
+                exportQuoteToPDF({
+                  id: id,
+                  title: formValues.title,
+                  description: formValues.description,
+                  amount: parseFloat(formValues.amount || "0"),
+                  deposit_percentage: formValues.depositPercentage ? parseFloat(formValues.depositPercentage) : null,
+                  deposit_amount: formValues.depositPercentage && formValues.amount
+                    ? (parseFloat(formValues.amount) * parseFloat(formValues.depositPercentage)) / 100
+                    : null,
+                  status: formValues.status,
+                  created_at: new Date().toISOString(),
+                  client: selectedClient ? {
+                    first_name: selectedClient.first_name,
+                    last_name: selectedClient.last_name,
+                  } : undefined,
+                });
+                toast.success('Devis exporté en PDF');
+              }}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Exporter PDF
+            </Button>
+          )}
+        </div>
       </header>
 
       <div className="p-4">
