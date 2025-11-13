@@ -1,7 +1,6 @@
 import { NavLink } from './NavLink';
-import { Home, Users, FileText, Hammer, Wallet, Clock, Search } from 'lucide-react';
+import { Home, Users, FileText, Hammer, Wallet, Clock } from 'lucide-react';
 import { GlobalSearch } from './GlobalSearch';
-import { useState } from 'react';
 
 const MobileNav = () => {
   return (
