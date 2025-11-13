@@ -300,17 +300,27 @@ export default function Invoices() {
                 startDate={dateRange.start}
                 endDate={dateRange.end}
               /> */}
-              <SortableList
-                sortOptions={sortOptions}
-                defaultSort="created_at-desc"
-                onSortChange={setSortBy}
-              />
             </div>
           </CardContent>
         </Card>
 
         {/* Liste des factures */}
-        {paginatedInvoices.length === 0 ? (
+        <SortableList
+          items={filteredAndSortedInvoices}
+          sortOptions={sortOptions}
+          defaultSort={{ key: 'created_at', direction: 'desc' }}
+        >
+          {(sortedInvoices) => {
+            // Pagination sur les factures triées
+            const totalPages = Math.ceil(sortedInvoices.length / ITEMS_PER_PAGE);
+            const paginatedInvoices = useMemo(() => {
+              const start = (currentPage - 1) * ITEMS_PER_PAGE;
+              return sortedInvoices.slice(start, start + ITEMS_PER_PAGE);
+            }, [sortedInvoices, currentPage]);
+
+            return (
+              <>
+                {paginatedInvoices.length === 0 ? (
           <Card>
             <CardContent className="p-12 text-center">
               <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -410,16 +420,18 @@ export default function Invoices() {
               );
             })}
 
-            {/* Pagination */}
-            {filteredAndSortedInvoices.length > ITEMS_PER_PAGE && (
-              <Pagination
-                currentPage={currentPage}
-                totalPages={Math.ceil(filteredAndSortedInvoices.length / ITEMS_PER_PAGE)}
-                onPageChange={setCurrentPage}
-              />
-            )}
-          </div>
-        )}
+                {/* Pagination */}
+                {sortedInvoices.length > ITEMS_PER_PAGE && (
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                  />
+                )}
+              </>
+            );
+          }}
+        </SortableList>
       </div>
 
       {/* Confirmation de suppression */}
