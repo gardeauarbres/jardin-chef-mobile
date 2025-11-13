@@ -14,6 +14,13 @@ export function useSupabaseQuery<T>(
     queryFn: queryFn,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 10, // 10 minutes
+    retry: (failureCount, error: any) => {
+      // Ne pas réessayer si c'est une erreur 404 (table n'existe pas)
+      if (error?.code === 'PGRST116' || error?.status === 404) {
+        return false;
+      }
+      return failureCount < 1;
+    },
     ...options,
   });
 }
@@ -113,7 +120,14 @@ export function useSites() {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      // Si la table n'existe pas, retourner un tableau vide au lieu de lancer une erreur
+      if (error) {
+        if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
+          console.warn('Table sites does not exist yet. Please run migrations.');
+          return [];
+        }
+        throw error;
+      }
       return data || [];
     },
     {
@@ -146,7 +160,14 @@ export function usePayments() {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      // Si la table n'existe pas, retourner un tableau vide au lieu de lancer une erreur
+      if (error) {
+        if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
+          console.warn('Table payments does not exist yet. Please run migrations.');
+          return [];
+        }
+        throw error;
+      }
       return data || [];
     },
     {

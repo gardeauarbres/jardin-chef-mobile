@@ -63,14 +63,20 @@ const Dashboard = () => {
 
   // Calculer les stats avec useMemo pour éviter les recalculs
   const computedStats = useMemo(() => {
-    const activeSites = sites.filter(s => s.status === 'active').length;
-    const pendingPayments = payments
-      .filter(p => p.status === 'pending')
-      .reduce((sum, p) => sum + p.amount, 0);
-    const acceptedQuotes = quotes.filter(q => q.status === 'accepted').length;
+    // S'assurer que les données sont des tableaux avant de les utiliser
+    const safeSites = Array.isArray(sites) ? sites : [];
+    const safePayments = Array.isArray(payments) ? payments : [];
+    const safeQuotes = Array.isArray(quotes) ? quotes : [];
+    const safeClients = Array.isArray(clients) ? clients : [];
+
+    const activeSites = safeSites.filter((s: any) => s?.status === 'active').length;
+    const pendingPayments = safePayments
+      .filter((p: any) => p?.status === 'pending')
+      .reduce((sum: number, p: any) => sum + (p?.amount || 0), 0);
+    const acceptedQuotes = safeQuotes.filter((q: any) => q?.status === 'accepted').length;
 
     return {
-      totalClients: clients.length,
+      totalClients: safeClients.length,
       activeSites,
       totalPending: pendingPayments,
       acceptedQuotes,
