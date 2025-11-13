@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Trash2 } from 'lucide-react';
 import MobileNav from '@/components/MobileNav';
 import {
@@ -17,6 +18,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
+import { useSites, useSupabaseMutation } from '@/hooks/useSupabaseQuery';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 
@@ -39,9 +41,35 @@ interface Site {
 const Sites = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const [sites, setSites] = useState<Site[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [siteToDelete, setSiteToDelete] = useState<string | null>(null);
+
+  // Utiliser le hook optimisé avec cache
+  const { data: sites = [], isLoading } = useSites();
+
+  // Mutation optimisée pour la suppression
+  const deleteMutation = useSupabaseMutation(
+    async (siteId: string) => {
+      const { error } = await supabase
+        .from('sites')
+        .delete()
+        .eq('id', siteId);
+      
+      if (error) throw error;
+      return siteId;
+    },
+    [['sites', user?.id || '']],
+    {
+      onSuccess: () => {
+        toast.success('Chantier supprimé');
+        setDeleteDialogOpen(false);
+        setSiteToDelete(null);
+      },
+      onError: () => {
+        toast.error("Erreur lors de la suppression");
+      },
+    }
+  );
 
   useEffect(() => {
     if (!loading && !user) {
@@ -49,41 +77,15 @@ const Sites = () => {
     }
   }, [user, loading, navigate]);
 
-  useEffect(() => {
-    if (!user) return;
-    fetchSites();
-  }, [user]);
-
-  const fetchSites = async () => {
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from('sites')
-      .select(`
-        *,
-        clients (
-          first_name,
-          last_name
-        )
-      `)
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      toast.error("Erreur lors du chargement des chantiers");
-    } else {
-      setSites(data || []);
-    }
-  };
-
-  const getClientName = (site: Site) => {
+  // Optimisation: useCallback pour éviter les re-créations
+  const getClientName = useCallback((site: Site) => {
     if (site.clients) {
       return `${site.clients.first_name} ${site.clients.last_name}`;
     }
     return 'Client inconnu';
-  };
+  }, []);
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = useCallback((status: string) => {
     const variants: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline', label: string }> = {
       active: { variant: 'default', label: 'En cours' },
       completed: { variant: 'secondary', label: 'Terminé' },
@@ -91,39 +93,45 @@ const Sites = () => {
     };
     const config = variants[status] || variants.active;
     return <Badge variant={config.variant}>{config.label}</Badge>;
-  };
+  }, []);
 
-  const calculateProgress = (paidAmount: number, totalAmount: number) => {
+  const calculateProgress = useCallback((paidAmount: number, totalAmount: number) => {
     return totalAmount > 0 ? (paidAmount / totalAmount) * 100 : 0;
-  };
+  }, []);
 
-  const handleDeleteClick = (siteId: string, e: React.MouseEvent) => {
+  const handleDeleteClick = useCallback((siteId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setSiteToDelete(siteId);
     setDeleteDialogOpen(true);
-  };
+  }, []);
 
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = useCallback(() => {
     if (!siteToDelete) return;
+    deleteMutation.mutate(siteToDelete);
+  }, [siteToDelete, deleteMutation]);
 
-    const { error } = await supabase
-      .from('sites')
-      .delete()
-      .eq('id', siteToDelete);
-
-    if (error) {
-      toast.error("Erreur lors de la suppression");
-    } else {
-      toast.success('Chantier supprimé');
-      fetchSites();
-    }
-
-    setDeleteDialogOpen(false);
-    setSiteToDelete(null);
-  };
-
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Chargement...</div>;
+  if (loading || isLoading) {
+    return (
+      <div className="min-h-screen bg-background pb-20">
+        <header className="bg-primary text-primary-foreground p-6">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-4 w-32 mt-2" />
+        </header>
+        <div className="p-4 space-y-4">
+          {[1, 2, 3].map((i) => (
+            <Card key={i}>
+              <CardContent className="p-4">
+                <Skeleton className="h-6 w-48 mb-2" />
+                <Skeleton className="h-4 w-full mb-4" />
+                <Skeleton className="h-2 w-full mb-2" />
+                <Skeleton className="h-4 w-32" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <MobileNav />
+      </div>
+    );
   }
 
   if (!user) {
@@ -210,8 +218,12 @@ const Sites = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Supprimer
+            <AlertDialogAction 
+              onClick={handleDeleteConfirm} 
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? 'Suppression...' : 'Supprimer'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

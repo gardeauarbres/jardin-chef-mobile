@@ -1,9 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, FileText, Hammer, Euro, TrendingUp, LogOut } from 'lucide-react';
 import { useMemo, useEffect, useState } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 import MobileNav from '@/components/MobileNav';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
+import { useClients, useQuotes, useSites, usePayments } from '@/hooks/useSupabaseQuery';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 
@@ -24,39 +26,76 @@ const Dashboard = () => {
     }
   }, [user, loading, navigate]);
 
+  // Utiliser les hooks optimisés avec cache
+  const { data: clients = [] } = useClients();
+  const { data: quotes = [] } = useQuotes();
+  const { data: sites = [] } = useSites();
+  const { data: payments = [] } = usePayments();
+
   useEffect(() => {
     if (!user) return;
 
-    const fetchData = async () => {
-      const [clientsRes, quotesRes, sitesRes, paymentsRes, profileRes] = await Promise.all([
-        supabase.from('clients').select('*').eq('user_id', user.id),
-        supabase.from('quotes').select('*').eq('user_id', user.id),
-        supabase.from('sites').select('*').eq('user_id', user.id),
-        supabase.from('payments').select('*').eq('user_id', user.id),
-        supabase.from('profiles').select('first_name, last_name').eq('id', user.id).single(),
-      ]);
+    // Récupérer le profil utilisateur
+    const fetchProfile = async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('first_name, last_name')
+        .eq('id', user.id)
+        .single();
 
-      const activeSites = sitesRes.data?.filter(s => s.status === 'active').length || 0;
-      const pendingPayments = paymentsRes.data?.filter(p => p.status === 'pending').reduce((sum, p) => sum + p.amount, 0) || 0;
-
-      setStats({
-        totalClients: clientsRes.data?.length || 0,
-        activeSites,
-        totalPending: pendingPayments,
-        acceptedQuotes: quotesRes.data?.filter(q => q.status === 'accepted').length || 0,
-      });
-
-      if (profileRes.data) {
-        const fullName = `${profileRes.data.first_name || ''} ${profileRes.data.last_name || ''}`.trim();
+      if (data) {
+        const fullName = `${data.first_name || ''} ${data.last_name || ''}`.trim();
         setUserName(fullName || 'Utilisateur');
       }
     };
 
-    fetchData();
+    fetchProfile();
   }, [user]);
 
+  // Calculer les stats avec useMemo pour éviter les recalculs
+  const computedStats = useMemo(() => {
+    const activeSites = sites.filter(s => s.status === 'active').length;
+    const pendingPayments = payments
+      .filter(p => p.status === 'pending')
+      .reduce((sum, p) => sum + p.amount, 0);
+    const acceptedQuotes = quotes.filter(q => q.status === 'accepted').length;
+
+    return {
+      totalClients: clients.length,
+      activeSites,
+      totalPending: pendingPayments,
+      acceptedQuotes,
+    };
+  }, [clients, quotes, sites, payments]);
+
+  useEffect(() => {
+    setStats(computedStats);
+  }, [computedStats]);
+
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Chargement...</div>;
+    return (
+      <div className="min-h-screen bg-background pb-20">
+        <header className="bg-primary text-primary-foreground p-6">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-4 w-32 mt-2" />
+        </header>
+        <div className="p-4 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i}>
+                <CardHeader className="pb-3">
+                  <Skeleton className="h-4 w-24" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-8 w-16" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+        <MobileNav />
+      </div>
+    );
   }
 
   if (!user) {

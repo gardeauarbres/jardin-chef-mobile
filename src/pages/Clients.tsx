@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Plus, Search, Phone, Mail, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import MobileNav from '@/components/MobileNav';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -17,6 +18,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
+import { useClients, useSupabaseMutation } from '@/hooks/useSupabaseQuery';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Client {
@@ -32,9 +34,35 @@ const Clients = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
-  const [clients, setClients] = useState<Client[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<string | null>(null);
+
+  // Utiliser le hook optimisé avec cache
+  const { data: clients = [], isLoading, error } = useClients();
+
+  // Mutation optimisée pour la suppression
+  const deleteMutation = useSupabaseMutation(
+    async (clientId: string) => {
+      const { error } = await supabase
+        .from('clients')
+        .delete()
+        .eq('id', clientId);
+      
+      if (error) throw error;
+      return clientId;
+    },
+    [['clients', user?.id || '']],
+    {
+      onSuccess: () => {
+        toast.success('Client supprimé');
+        setDeleteDialogOpen(false);
+        setClientToDelete(null);
+      },
+      onError: () => {
+        toast.error("Erreur lors de la suppression");
+      },
+    }
+  );
 
   useEffect(() => {
     if (!loading && !user) {
@@ -42,32 +70,16 @@ const Clients = () => {
     }
   }, [user, loading, navigate]);
 
-  useEffect(() => {
-    if (!user) return;
-    fetchClients();
-  }, [user]);
-
-  const fetchClients = async () => {
-    if (!user) return;
-    
-    const { data, error } = await supabase
-      .from('clients')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      toast.error("Erreur lors du chargement des clients");
-    } else {
-      setClients(data || []);
-    }
-  };
-
-  const filteredClients = clients.filter(client =>
-    `${client.first_name} ${client.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.phone.includes(searchTerm)
-  );
+  // Optimisation: useMemo pour le filtrage
+  const filteredClients = useMemo(() => {
+    if (!searchTerm) return clients;
+    const term = searchTerm.toLowerCase();
+    return clients.filter(client =>
+      `${client.first_name} ${client.last_name}`.toLowerCase().includes(term) ||
+      client.email.toLowerCase().includes(term) ||
+      client.phone.includes(searchTerm)
+    );
+  }, [clients, searchTerm]);
 
   const handleCall = (phone: string) => {
     window.location.href = `tel:${phone}`;
@@ -83,27 +95,32 @@ const Clients = () => {
     setDeleteDialogOpen(true);
   };
 
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = () => {
     if (!clientToDelete) return;
-
-    const { error } = await supabase
-      .from('clients')
-      .delete()
-      .eq('id', clientToDelete);
-
-    if (error) {
-      toast.error("Erreur lors de la suppression");
-    } else {
-      toast.success('Client supprimé');
-      fetchClients();
-    }
-    
-    setDeleteDialogOpen(false);
-    setClientToDelete(null);
+    deleteMutation.mutate(clientToDelete);
   };
 
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Chargement...</div>;
+  if (loading || isLoading) {
+    return (
+      <div className="min-h-screen bg-background pb-20">
+        <header className="bg-primary text-primary-foreground p-6">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-4 w-32 mt-2" />
+        </header>
+        <div className="p-4 space-y-4">
+          {[1, 2, 3].map((i) => (
+            <Card key={i}>
+              <CardContent className="p-4">
+                <Skeleton className="h-6 w-48 mb-2" />
+                <Skeleton className="h-4 w-full mb-2" />
+                <Skeleton className="h-4 w-64" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <MobileNav />
+      </div>
+    );
   }
 
   if (!user) {
@@ -213,8 +230,12 @@ const Clients = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Supprimer
+            <AlertDialogAction 
+              onClick={handleDeleteConfirm} 
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? 'Suppression...' : 'Supprimer'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
