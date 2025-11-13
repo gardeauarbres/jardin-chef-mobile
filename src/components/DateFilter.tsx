@@ -90,6 +90,10 @@ export const DateRangeFilter = ({
     onDateRangeChange(null, null);
   };
 
+  // S'assurer que startDate et endDate sont bien des Date ou null/undefined
+  const safeStartDate = startDate instanceof Date ? startDate : (startDate ? new Date(startDate) : undefined);
+  const safeEndDate = endDate instanceof Date ? endDate : (endDate ? new Date(endDate) : undefined);
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -97,24 +101,24 @@ export const DateRangeFilter = ({
           variant="outline"
           className={cn(
             'justify-start text-left font-normal',
-            !startDate && !endDate && 'text-muted-foreground',
+            !safeStartDate && !safeEndDate && 'text-muted-foreground',
             className
           )}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
-          {startDate && endDate ? (
+          {safeStartDate && safeEndDate ? (
             <>
-              {format(startDate, 'dd/MM/yyyy', { locale: fr })} -{' '}
-              {format(endDate, 'dd/MM/yyyy', { locale: fr })}
+              {format(safeStartDate, 'dd/MM/yyyy', { locale: fr })} -{' '}
+              {format(safeEndDate, 'dd/MM/yyyy', { locale: fr })}
             </>
-          ) : startDate ? (
-            `À partir du ${format(startDate, 'dd/MM/yyyy', { locale: fr })}`
-          ) : endDate ? (
-            `Jusqu'au ${format(endDate, 'dd/MM/yyyy', { locale: fr })}`
+          ) : safeStartDate ? (
+            `À partir du ${format(safeStartDate, 'dd/MM/yyyy', { locale: fr })}`
+          ) : safeEndDate ? (
+            `Jusqu'au ${format(safeEndDate, 'dd/MM/yyyy', { locale: fr })}`
           ) : (
             <span>Période</span>
           )}
-          {(startDate || endDate) && (
+          {(safeStartDate || safeEndDate) && (
             <X
               className="ml-2 h-4 w-4"
               onClick={(e) => {
@@ -131,8 +135,8 @@ export const DateRangeFilter = ({
             <label className="text-sm font-medium mb-2 block">Date de début</label>
             <Calendar
               mode="single"
-              selected={startDate || undefined}
-              onSelect={(date) => onDateRangeChange(date || null, endDate)}
+              selected={safeStartDate}
+              onSelect={(date) => onDateRangeChange(date || null, safeEndDate || null)}
               initialFocus
             />
           </div>
@@ -140,12 +144,12 @@ export const DateRangeFilter = ({
             <label className="text-sm font-medium mb-2 block">Date de fin</label>
             <Calendar
               mode="single"
-              selected={endDate || undefined}
-              onSelect={(date) => onDateRangeChange(startDate, date || null)}
+              selected={safeEndDate}
+              onSelect={(date) => onDateRangeChange(safeStartDate || null, date || null)}
               initialFocus
             />
           </div>
-          {(startDate || endDate) && (
+          {(safeStartDate || safeEndDate) && (
             <Button
               variant="outline"
               size="sm"
