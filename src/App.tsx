@@ -49,7 +49,6 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
-        <PaymentNotifications />
         <BrowserRouter>
           <Suspense fallback={<PageLoader />}>
             <Routes>

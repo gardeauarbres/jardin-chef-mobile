@@ -9,6 +9,7 @@ import { useClients, useQuotes, useSites, usePayments } from '@/hooks/useSupabas
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/components/ThemeProvider';
+import { PaymentNotifications } from '@/components/PaymentNotifications';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -112,6 +113,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
+            <PaymentNotifications />
             <header className="bg-primary text-primary-foreground p-6">
               <div className="flex items-center justify-between">
                 <div>

@@ -5,11 +5,12 @@ import { toast } from 'sonner';
 import { Bell } from 'lucide-react';
 
 export const PaymentNotifications = () => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  // Le hook usePayments a déjà enabled: !!user, donc il ne fera rien si user est null
   const { data: payments = [] } = usePayments();
 
-  // Ne rien faire si l'utilisateur n'est pas connecté
-  if (!user) {
+  // Ne rien faire si l'utilisateur n'est pas connecté ou en cours de chargement
+  if (loading || !user) {
     return null;
   }
 
