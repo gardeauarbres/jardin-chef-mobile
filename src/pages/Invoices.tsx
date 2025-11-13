@@ -126,12 +126,6 @@ export default function Invoices() {
     return filtered;
   }, [invoices, searchTerm, statusFilter, dateRange, sortBy]);
 
-  // Pagination
-  const paginatedInvoices = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredAndSortedInvoices.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredAndSortedInvoices, currentPage]);
-
   // Calculer les statistiques (AVANT tout return conditionnel)
   const stats = useMemo(() => {
     if (!invoices) return { total: 0, unpaid: 0, overdue: 0, totalAmount: 0 };
