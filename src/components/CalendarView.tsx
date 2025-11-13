@@ -236,7 +236,6 @@ export function CalendarView({ onInterventionClick, onDateClick }: CalendarViewP
                     onDateClick?.(date);
                   }
                 }}
-                locale={fr}
                 className="rounded-md border"
                 modifiers={modifiers}
                 modifiersClassNames={{

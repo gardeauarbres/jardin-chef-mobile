@@ -378,7 +378,6 @@ export function InvoiceForm({
                   selected={dueDate}
                   onSelect={setDueDate}
                   initialFocus
-                  locale={fr}
                 />
               </PopoverContent>
             </Popover>
