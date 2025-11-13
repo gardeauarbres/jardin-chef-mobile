@@ -3,8 +3,17 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 // Initialiser Gemini avec la clé API depuis les variables d'environnement
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
+// Debug: afficher l'état de la clé API (uniquement en développement)
+if (import.meta.env.DEV) {
+  console.log('[Gemini Debug] VITE_GEMINI_API_KEY:', apiKey ? `${apiKey.substring(0, 10)}...` : 'NON DÉFINIE');
+  console.log('[Gemini Debug] Toutes les variables VITE_*:', Object.keys(import.meta.env).filter(k => k.startsWith('VITE_')));
+}
+
 if (!apiKey) {
-  console.warn('VITE_GEMINI_API_KEY n\'est pas définie. Les fonctionnalités IA seront désactivées.');
+  console.warn('⚠️ VITE_GEMINI_API_KEY n\'est pas définie. Les fonctionnalités IA seront désactivées.');
+  console.warn('💡 Vérifiez que:');
+  console.warn('   1. Le fichier .env contient VITE_GEMINI_API_KEY=votre-clé');
+  console.warn('   2. Le serveur de développement a été redémarré après l\'ajout de la variable');
 }
 
 const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
