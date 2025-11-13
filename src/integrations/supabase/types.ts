@@ -175,6 +175,50 @@ export type Database = {
           },
         ]
       }
+      photos: {
+        Row: {
+          id: string
+          user_id: string
+          site_id: string
+          url: string
+          type: string
+          description: string | null
+          file_name: string | null
+          file_size: number | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          site_id: string
+          url: string
+          type: string
+          description?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          site_id?: string
+          url?: string
+          type?: string
+          description?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photos_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employees: {
         Row: {
           id: string

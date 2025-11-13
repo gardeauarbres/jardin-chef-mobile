@@ -15,6 +15,7 @@ import { ArrowLeft } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSupabaseMutation } from "@/hooks/useSupabaseQuery";
 import MobileNav from "@/components/MobileNav";
+import { PhotoGallery } from "@/components/PhotoGallery";
 
 const siteSchema = z.object({
   title: z
@@ -203,14 +204,19 @@ const SiteForm = () => {
 
         if (error) throw error;
         toast.success("Chantier modifié avec succès");
+        navigate("/sites");
       } else {
-        const { error } = await supabase.from("sites").insert([siteData]);
+        const { data, error } = await supabase.from("sites").insert([siteData]).select().single();
 
         if (error) throw error;
         toast.success("Chantier créé avec succès");
+        // Rediriger vers la page d'édition pour pouvoir ajouter des photos
+        if (data?.id) {
+          navigate(`/sites/${data.id}`);
+        } else {
+          navigate("/sites");
+        }
       }
-
-      navigate("/sites");
     } catch (error: any) {
       toast.error("Une erreur est survenue");
     }
@@ -436,6 +442,15 @@ const SiteForm = () => {
             </Form>
           </CardContent>
         </Card>
+
+        {/* Galerie photo - seulement en mode édition */}
+        {id && (
+          <Card className="mt-4">
+            <CardContent className="pt-6">
+              <PhotoGallery siteId={id} />
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       <MobileNav />
