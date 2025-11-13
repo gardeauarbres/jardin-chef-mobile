@@ -414,14 +414,16 @@ export default function Invoices() {
               );
             })}
 
-                {/* Pagination */}
-                {sortedInvoices.length > ITEMS_PER_PAGE && (
-                  <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={setCurrentPage}
-                  />
-                )}
+            {/* Pagination */}
+            {sortedInvoices.length > ITEMS_PER_PAGE && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+            )}
+          </div>
+        )}
               </>
             );
           }}
