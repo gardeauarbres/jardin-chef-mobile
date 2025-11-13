@@ -17,7 +17,9 @@ if (!apiKey) {
 }
 
 const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
-const model = genAI ? genAI.getGenerativeModel({ model: 'gemini-pro' }) : null;
+// Utiliser gemini-1.5-flash (modèle actuel recommandé, plus rapide et moins cher)
+// Alternative: gemini-1.5-pro pour plus de puissance
+const model = genAI ? genAI.getGenerativeModel({ model: 'gemini-1.5-flash' }) : null;
 
 /**
  * Génère une description détaillée pour un devis de paysagiste
