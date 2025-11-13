@@ -23,32 +23,12 @@ const Dashboard = () => {
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const [userName, setUserName] = useState<string>("");
-  const [stats, setStats] = useState({
-    totalClients: 0,
-    activeSites: 0,
-    totalPending: 0,
-    acceptedQuotes: 0,
-  });
 
   // Utiliser les hooks optimisés avec cache - TOUJOURS appelés, même si user est null
   const clientsQuery = useClients();
   const quotesQuery = useQuotes();
   const sitesQuery = useSites();
   const paymentsQuery = usePayments();
-
-  // Normaliser les données - calculer directement sans useMemo pour éviter les problèmes
-  const clients = Array.isArray(clientsQuery.data) ? clientsQuery.data : [];
-  const quotes = Array.isArray(quotesQuery.data) ? quotesQuery.data : [];
-  const sites = Array.isArray(sitesQuery.data) ? sitesQuery.data : [];
-  const payments = Array.isArray(paymentsQuery.data) ? paymentsQuery.data : [];
-
-  // Calculer les stats directement
-  const activeSites = sites.filter((s: any) => s?.status === 'active').length;
-  const pendingPayments = payments
-    .filter((p: any) => p?.status === 'pending')
-    .reduce((sum: number, p: any) => sum + (p?.amount || 0), 0);
-  const acceptedQuotes = quotes.filter((q: any) => q?.status === 'accepted').length;
-
 
   // useEffect pour la redirection - TOUJOURS appelé
   useEffect(() => {
@@ -78,27 +58,25 @@ const Dashboard = () => {
     fetchProfile();
   }, [user]);
 
-  // useEffect pour mettre à jour les stats - TOUJOURS appelé
-  useEffect(() => {
-    // Recalculer à chaque fois que les données changent
-    const currentClients = Array.isArray(clientsQuery.data) ? clientsQuery.data : [];
-    const currentQuotes = Array.isArray(quotesQuery.data) ? quotesQuery.data : [];
-    const currentSites = Array.isArray(sitesQuery.data) ? sitesQuery.data : [];
-    const currentPayments = Array.isArray(paymentsQuery.data) ? paymentsQuery.data : [];
+  // Calculer les stats directement dans le rendu - pas de useEffect pour éviter les problèmes
+  const clients = Array.isArray(clientsQuery.data) ? clientsQuery.data : [];
+  const quotes = Array.isArray(quotesQuery.data) ? quotesQuery.data : [];
+  const sites = Array.isArray(sitesQuery.data) ? sitesQuery.data : [];
+  const payments = Array.isArray(paymentsQuery.data) ? paymentsQuery.data : [];
 
-    const currentActiveSites = currentSites.filter((s: any) => s?.status === 'active').length;
-    const currentPendingPayments = currentPayments
-      .filter((p: any) => p?.status === 'pending')
-      .reduce((sum: number, p: any) => sum + (p?.amount || 0), 0);
-    const currentAcceptedQuotes = currentQuotes.filter((q: any) => q?.status === 'accepted').length;
+  const activeSites = sites.filter((s: any) => s?.status === 'active').length;
+  const pendingPayments = payments
+    .filter((p: any) => p?.status === 'pending')
+    .reduce((sum: number, p: any) => sum + (p?.amount || 0), 0);
+  const acceptedQuotes = quotes.filter((q: any) => q?.status === 'accepted').length;
 
-    setStats({
-      totalClients: currentClients.length,
-      activeSites: currentActiveSites,
-      totalPending: currentPendingPayments,
-      acceptedQuotes: currentAcceptedQuotes,
-    });
-  }, [clientsQuery.data, quotesQuery.data, sitesQuery.data, paymentsQuery.data]);
+  // Calculer les stats pour l'affichage
+  const computedStats = {
+    totalClients: clients.length,
+    activeSites,
+    totalPending: pendingPayments,
+    acceptedQuotes,
+  };
 
   if (loading) {
     return (
@@ -177,7 +155,7 @@ const Dashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalClients}</div>
+              <div className="text-2xl font-bold">{computedStats.totalClients}</div>
             </CardContent>
           </Card>
 
@@ -189,7 +167,7 @@ const Dashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.activeSites}</div>
+              <div className="text-2xl font-bold">{computedStats.activeSites}</div>
             </CardContent>
           </Card>
 
@@ -201,7 +179,7 @@ const Dashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.acceptedQuotes}</div>
+              <div className="text-2xl font-bold">{computedStats.acceptedQuotes}</div>
             </CardContent>
           </Card>
 
@@ -213,7 +191,7 @@ const Dashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalPending.toFixed(0)}€</div>
+              <div className="text-2xl font-bold">{computedStats.totalPending.toFixed(0)}€</div>
             </CardContent>
           </Card>
         </div>
