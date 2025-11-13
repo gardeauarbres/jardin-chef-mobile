@@ -6,6 +6,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Pagination } from '@/components/Pagination';
+import { SortableList, SortOption } from '@/components/SortableList';
+import { DateRangeFilter } from '@/components/DateFilter';
 import MobileNav from '@/components/MobileNav';
 import { Euro, Calendar, Trash2, Plus, Search, Filter } from 'lucide-react';
 import {
@@ -54,6 +56,8 @@ const Payments = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -139,21 +143,19 @@ const Payments = () => {
       );
     }
 
-    return filtered;
-  }, [payments, statusFilter, typeFilter, searchTerm, getSiteName, getClientName]);
+    // Filtre par date (due_date ou created_at)
+    if (startDate || endDate) {
+      filtered = filtered.filter(p => {
+        const dateToCheck = p.due_date || p.created_at;
+        const dateObj = new Date(dateToCheck);
+        if (startDate && dateObj < startDate) return false;
+        if (endDate && dateObj > endDate) return false;
+        return true;
+      });
+    }
 
-  const sortedPayments = useMemo(() => {
-    return [...filteredPayments].sort((a, b) => {
-      // Pending payments first
-      if (a.status !== b.status) {
-        return a.status === 'pending' ? -1 : 1;
-      }
-      // Then by due date or creation date
-      const dateA = a.due_date || a.created_at;
-      const dateB = b.due_date || b.created_at;
-      return new Date(dateA).getTime() - new Date(dateB).getTime();
-    });
-  }, [filteredPayments]);
+    return filtered;
+  }, [payments, statusFilter, typeFilter, searchTerm, startDate, endDate, getSiteName, getClientName]);
 
   // Pagination
   const totalPages = Math.ceil(sortedPayments.length / ITEMS_PER_PAGE);
@@ -166,7 +168,7 @@ const Payments = () => {
   // Réinitialiser la page quand les filtres changent
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, typeFilter]);
+  }, [searchTerm, statusFilter, typeFilter, startDate, endDate]);
 
   const pendingTotal = useMemo(() => {
     return filteredPayments
