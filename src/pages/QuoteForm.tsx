@@ -15,6 +15,7 @@ import { quoteSchema, QuoteFormData } from "@/lib/validations";
 import { useAuth } from "@/hooks/useAuth";
 import { useSupabaseMutation } from "@/hooks/useSupabaseQuery";
 import { exportQuoteToPDF } from "@/lib/pdfExport";
+import { useAutoSave } from "@/hooks/useAutoSave";
 import MobileNav from "@/components/MobileNav";
 
 interface Client {
@@ -41,6 +42,14 @@ const QuoteForm = () => {
       clientId: "",
       status: "draft",
     },
+  });
+
+  // Sauvegarde automatique des brouillons (uniquement pour les nouveaux devis)
+  const { clearAutoSave } = useAutoSave({
+    form,
+    key: id ? `quote_${id}` : 'quote_new',
+    interval: 30000, // 30 secondes
+    enabled: !id || form.watch('status') === 'draft', // Sauvegarder seulement pour les brouillons
   });
 
   useEffect(() => {
@@ -185,6 +194,10 @@ const QuoteForm = () => {
         }
 
         toast.success("Devis modifié avec succès");
+        // Nettoyer la sauvegarde automatique après sauvegarde réussie
+        if (id) {
+          clearAutoSave();
+        }
       } else {
         // Création d'un nouveau devis
         const { error, data } = await supabase
@@ -201,6 +214,8 @@ const QuoteForm = () => {
         }
 
         toast.success("Devis créé avec succès");
+        // Nettoyer la sauvegarde automatique après création réussie
+        clearAutoSave();
       }
 
       navigate("/quotes");
