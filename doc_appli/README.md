@@ -144,4 +144,4 @@ Propriétaire - Tous droits réservés
 
 ---
 
-Développé avec ❤️ pour les paysagistes
+Développé pour les paysagistes
