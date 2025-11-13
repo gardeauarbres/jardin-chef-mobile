@@ -275,6 +275,97 @@ export type Database = {
           },
         ]
       }
+      invoices: {
+        Row: {
+          id: string
+          user_id: string
+          quote_id: string
+          site_id: string
+          client_id: string
+          invoice_number: string
+          title: string
+          description: string | null
+          amount: number
+          tax_rate: number | null
+          tax_amount: number
+          total_amount: number
+          status: string
+          issue_date: string
+          due_date: string
+          paid_date: string | null
+          sent_date: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          quote_id: string
+          site_id: string
+          client_id: string
+          invoice_number: string
+          title: string
+          description?: string | null
+          amount: number
+          tax_rate?: number | null
+          tax_amount?: number
+          total_amount: number
+          status?: string
+          issue_date?: string
+          due_date: string
+          paid_date?: string | null
+          sent_date?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          quote_id?: string
+          site_id?: string
+          client_id?: string
+          invoice_number?: string
+          title?: string
+          description?: string | null
+          amount?: number
+          tax_rate?: number | null
+          tax_amount?: number
+          total_amount?: number
+          status?: string
+          issue_date?: string
+          due_date?: string
+          paid_date?: string | null
+          sent_date?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employees: {
         Row: {
           id: string

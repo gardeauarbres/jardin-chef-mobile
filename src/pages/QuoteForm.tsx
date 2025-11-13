@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ArrowLeft, Download } from "lucide-react";
+import { ArrowLeft, Download, FileText } from "lucide-react";
 import { quoteSchema, QuoteFormData } from "@/lib/validations";
 import { useAuth } from "@/hooks/useAuth";
 import { useSupabaseMutation } from "@/hooks/useSupabaseQuery";
@@ -18,6 +18,7 @@ import { exportQuoteToPDF } from "@/lib/pdfExport";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { AutoSaveIndicator } from "@/components/AutoSaveIndicator";
 import { AIQuoteHelper } from "@/components/AIQuoteHelper";
+import { InvoiceForm } from "@/components/InvoiceForm";
 import MobileNav from "@/components/MobileNav";
 
 interface Client {
