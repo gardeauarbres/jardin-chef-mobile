@@ -251,9 +251,14 @@ const QuoteForm = () => {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">
-            {id ? "Modifier le devis" : "Nouveau devis"}
-          </h1>
+          <div>
+            <h1 className="text-2xl font-bold">
+              {id ? "Modifier le devis" : "Nouveau devis"}
+            </h1>
+            {!id && (
+              <AutoSaveIndicator className="mt-1" />
+            )}
+          </div>
           {id && form.watch("title") && (
             <Button
               variant="secondary"
