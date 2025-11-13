@@ -9,7 +9,6 @@ import { useClients, useQuotes, useSites, usePayments } from '@/hooks/useSupabas
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/components/ThemeProvider';
-import { PaymentNotifications } from '@/components/PaymentNotifications';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,8 +30,8 @@ const Dashboard = () => {
   const [userName, setUserName] = useState<string>("");
   
   // 3. Refs pour stabilité
-  const userIdRef = useRef<string | null>(null);
   const hasNavigatedRef = useRef(false);
+  const lastUserIdRef = useRef<string | null>(null);
   
   // 4. Hooks de données React Query (toujours appelés, même si user est null)
   const clientsQuery = useClients();
@@ -45,23 +44,28 @@ const Dashboard = () => {
   
   // 6. useEffect (toujours appelés dans le même ordre)
   useEffect(() => {
-    // Éviter les navigations multiples
-    if (hasNavigatedRef.current) return;
-    
     if (!loading && !user) {
-      hasNavigatedRef.current = true;
-      navigate("/auth");
+      if (!hasNavigatedRef.current) {
+        hasNavigatedRef.current = true;
+        navigate("/auth");
+      }
+    } else if (user) {
+      hasNavigatedRef.current = false;
     }
   }, [user, loading, navigate]);
 
   useEffect(() => {
-    // Réinitialiser le flag de navigation si l'utilisateur change
-    if (userId !== userIdRef.current) {
-      hasNavigatedRef.current = false;
-      userIdRef.current = userId;
+    if (!user || !userId) {
+      lastUserIdRef.current = null;
+      return;
     }
-    
-    if (!user || !userId) return;
+
+    // Éviter les appels multiples pour le même utilisateur
+    if (lastUserIdRef.current === userId) {
+      return;
+    }
+
+    lastUserIdRef.current = userId;
 
     const fetchProfile = async () => {
       const { data } = await supabase
@@ -77,7 +81,7 @@ const Dashboard = () => {
     };
 
     fetchProfile();
-  }, [user, userId]);
+  }, [userId]);
 
   // 7. Normaliser et calculer les stats avec useMemo pour stabilité
   const clients = useMemo(() => {
@@ -143,7 +147,6 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-            <PaymentNotifications />
             <header className="bg-primary text-primary-foreground p-6">
               <div className="flex items-center justify-between">
                 <div>
