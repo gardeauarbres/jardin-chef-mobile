@@ -33,6 +33,30 @@ const Auth = () => {
   });
 
   useEffect(() => {
+    // Gérer la redirection après confirmation d'email
+    const handleAuthCallback = async () => {
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get('access_token');
+      const refreshToken = hashParams.get('refresh_token');
+      
+      if (accessToken && refreshToken) {
+        // Échanger le token contre une session
+        const { data, error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+        
+        if (!error && data.session) {
+          // Nettoyer l'URL
+          window.history.replaceState({}, document.title, window.location.pathname);
+          navigate("/");
+          toast.success("Email confirmé avec succès !");
+        }
+      }
+    };
+
+    handleAuthCallback();
+
     // Check if user is already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
@@ -42,7 +66,7 @@ const Auth = () => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
+      if (event === 'SIGNED_IN' && session) {
         navigate("/");
       }
     });
@@ -66,7 +90,7 @@ const Auth = () => {
             first_name: values.firstName,
             last_name: values.lastName,
           },
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: `${window.location.origin}/auth`,
         },
       });
 

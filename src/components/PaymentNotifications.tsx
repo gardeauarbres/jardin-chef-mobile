@@ -49,7 +49,7 @@ export const PaymentNotifications = () => {
         }
       );
     }
-  }, [overduePayments.length]); // Seulement quand le nombre change
+  }, [overduePayments.length]);
 
   useEffect(() => {
     // Afficher une notification pour les paiements à venir
