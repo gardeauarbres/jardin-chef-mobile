@@ -157,13 +157,6 @@ const Payments = () => {
     return filtered;
   }, [payments, statusFilter, typeFilter, searchTerm, startDate, endDate, getSiteName, getClientName]);
 
-  // Pagination
-  const totalPages = Math.ceil(sortedPayments.length / ITEMS_PER_PAGE);
-  const paginatedPayments = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    const end = start + ITEMS_PER_PAGE;
-    return sortedPayments.slice(start, end);
-  }, [sortedPayments, currentPage]);
 
   // Réinitialiser la page quand les filtres changent
   useEffect(() => {
@@ -289,21 +282,55 @@ const Payments = () => {
                 </SelectContent>
               </Select>
             </div>
+            <div className="flex gap-2 flex-wrap">
+              <DateRangeFilter
+                startDate={startDate}
+                endDate={endDate}
+                onDateRangeChange={(start, end) => {
+                  setStartDate(start);
+                  setEndDate(end);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
           </div>
         )}
 
-        {paginatedPayments.length === 0 ? (
-          <Card>
-            <CardContent className="p-6 text-center">
-              <p className="text-muted-foreground">Aucun paiement enregistré</p>
-              <Button onClick={() => navigate('/payments/new')} className="mt-4" variant="outline">
-                <Plus className="h-4 w-4 mr-2" />
-                Créer un paiement
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          paginatedPayments.map((payment) => (
+        <SortableList
+          items={filteredPayments}
+          sortOptions={[
+            { key: 'due_date', label: 'Date d\'échéance', getValue: (p) => p.due_date ? new Date(p.due_date) : new Date(p.created_at) },
+            { key: 'created_at', label: 'Date de création', getValue: (p) => new Date(p.created_at) },
+            { key: 'paid_date', label: 'Date de paiement', getValue: (p) => p.paid_date ? new Date(p.paid_date) : null },
+            { key: 'amount', label: 'Montant', getValue: (p) => p.amount || 0 },
+            { key: 'status', label: 'Statut' },
+            { key: 'type', label: 'Type' },
+          ] as SortOption<Payment>[]}
+          defaultSort={{ key: 'due_date', direction: 'asc' }}
+        >
+          {(sortedPayments) => {
+            // Pagination sur les paiements triés
+            const totalPages = Math.ceil(sortedPayments.length / ITEMS_PER_PAGE);
+            const paginatedPayments = useMemo(() => {
+              const start = (currentPage - 1) * ITEMS_PER_PAGE;
+              const end = start + ITEMS_PER_PAGE;
+              return sortedPayments.slice(start, end);
+            }, [sortedPayments, currentPage]);
+
+            return (
+              <>
+                {paginatedPayments.length === 0 ? (
+                  <Card>
+                    <CardContent className="p-6 text-center">
+                      <p className="text-muted-foreground">Aucun paiement enregistré</p>
+                      <Button onClick={() => navigate('/payments/new')} className="mt-4" variant="outline">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Créer un paiement
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  paginatedPayments.map((payment) => (
               <Card key={payment.id} className="group cursor-pointer hover:shadow-glow hover:scale-[1.02] transition-all duration-200 animate-fade-in" onClick={() => navigate(`/payments/${payment.id}`)}>
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-2">
@@ -345,14 +372,18 @@ const Payments = () => {
           ))
         )}
 
-        {totalPages > 1 && (
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-          />
-        )}
-      </div>
+                {totalPages > 1 && (
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                  />
+                )}
+              </>
+            );
+          }}
+        </SortableList>
+        </div>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
