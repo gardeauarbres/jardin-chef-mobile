@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Trash2, Search, Filter, Download } from 'lucide-react';
+import { Plus, Trash2, Search, Filter, Download, FileText } from 'lucide-react';
 import { exportQuoteToPDF } from '@/lib/pdfExport';
+import { InvoiceForm } from '@/components/InvoiceForm';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -279,6 +280,22 @@ const Quotes = () => {
                   </div>
                   <div className="flex items-start gap-2">
                     {getStatusBadge(quote.status)}
+                    {quote.status === 'accepted' && (
+                      <InvoiceForm
+                        quoteId={quote.id}
+                        trigger={
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="opacity-0 group-hover:opacity-100 hover:bg-primary hover:text-primary-foreground transition-all h-8 w-8"
+                            title="Créer une facture"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <FileText className="h-4 w-4" />
+                          </Button>
+                        }
+                      />
+                    )}
                     <Button
                       size="icon"
                       variant="outline"
