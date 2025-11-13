@@ -132,10 +132,16 @@ export function useSites() {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      // Si la table n'existe pas, retourner un tableau vide au lieu de lancer une erreur
+      // Si la table n'existe pas ou erreur 404, retourner un tableau vide
       if (error) {
-        if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
-          console.warn('Table sites does not exist yet. Please run migrations.');
+        // Vérifier différents codes d'erreur possibles
+        const is404Error = error.code === 'PGRST116' || 
+                          error.status === 404 || 
+                          error.message?.includes('does not exist') ||
+                          error.message?.includes('relation') && error.message?.includes('does not exist');
+        
+        if (is404Error) {
+          console.warn('Table sites does not exist or 404 error:', error.message);
           return [];
         }
         throw error;
@@ -172,10 +178,16 @@ export function usePayments() {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      // Si la table n'existe pas, retourner un tableau vide au lieu de lancer une erreur
+      // Si la table n'existe pas ou erreur 404, retourner un tableau vide
       if (error) {
-        if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
-          console.warn('Table payments does not exist yet. Please run migrations.');
+        // Vérifier différents codes d'erreur possibles
+        const is404Error = error.code === 'PGRST116' || 
+                          error.status === 404 || 
+                          error.message?.includes('does not exist') ||
+                          error.message?.includes('relation') && error.message?.includes('does not exist');
+        
+        if (is404Error) {
+          console.warn('Table payments does not exist or 404 error:', error.message);
           return [];
         }
         throw error;

@@ -36,15 +36,16 @@ const Dashboard = () => {
   const sitesQuery = useSites();
   const paymentsQuery = usePayments();
 
-  // Normaliser les données pour garantir qu'elles sont toujours des tableaux
-  const clients = Array.isArray(clientsQuery.data) ? clientsQuery.data : [];
-  const quotes = Array.isArray(quotesQuery.data) ? quotesQuery.data : [];
-  const sites = Array.isArray(sitesQuery.data) ? sitesQuery.data : [];
-  const payments = Array.isArray(paymentsQuery.data) ? paymentsQuery.data : [];
-
-  // Calculer les stats avec useMemo - TOUJOURS appelé, jamais dans une condition
-  // Les dépendances sont maintenant toujours des tableaux, jamais undefined
+  // Normaliser les données et calculer les stats en une seule fois avec useMemo
+  // Utiliser les données brutes des queries comme dépendances pour éviter les problèmes de référence
   const computedStats = useMemo(() => {
+    // Normaliser les données
+    const clients = Array.isArray(clientsQuery.data) ? clientsQuery.data : [];
+    const quotes = Array.isArray(quotesQuery.data) ? quotesQuery.data : [];
+    const sites = Array.isArray(sitesQuery.data) ? sitesQuery.data : [];
+    const payments = Array.isArray(paymentsQuery.data) ? paymentsQuery.data : [];
+
+    // Calculer les stats
     const activeSites = sites.filter((s: any) => s?.status === 'active').length;
     const pendingPayments = payments
       .filter((p: any) => p?.status === 'pending')
@@ -57,7 +58,13 @@ const Dashboard = () => {
       totalPending: pendingPayments,
       acceptedQuotes,
     };
-  }, [clients, quotes, sites, payments]);
+  }, [
+    clientsQuery.data,
+    quotesQuery.data,
+    sitesQuery.data,
+    paymentsQuery.data
+  ]);
+
 
   // useEffect pour la redirection - TOUJOURS appelé
   useEffect(() => {
