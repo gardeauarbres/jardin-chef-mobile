@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 const Dashboard = () => {
+  // Tous les hooks doivent être au début, dans le même ordre à chaque rendu
   const { user, loading, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
@@ -29,39 +30,13 @@ const Dashboard = () => {
     acceptedQuotes: 0,
   });
 
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate("/auth");
-    }
-  }, [user, loading, navigate]);
-
-  // Utiliser les hooks optimisés avec cache
+  // Utiliser les hooks optimisés avec cache - TOUJOURS appelés, même si user est null
   const { data: clients = [] } = useClients();
   const { data: quotes = [] } = useQuotes();
   const { data: sites = [] } = useSites();
   const { data: payments = [] } = usePayments();
 
-  useEffect(() => {
-    if (!user) return;
-
-    // Récupérer le profil utilisateur
-    const fetchProfile = async () => {
-      const { data } = await supabase
-        .from('profiles')
-        .select('first_name, last_name')
-        .eq('id', user.id)
-        .single();
-
-      if (data) {
-        const fullName = `${data.first_name || ''} ${data.last_name || ''}`.trim();
-        setUserName(fullName || 'Utilisateur');
-      }
-    };
-
-    fetchProfile();
-  }, [user]);
-
-  // Calculer les stats avec useMemo pour éviter les recalculs
+  // Calculer les stats avec useMemo - TOUJOURS appelé, jamais dans une condition
   const computedStats = useMemo(() => {
     // S'assurer que les données sont des tableaux avant de les utiliser
     const safeSites = Array.isArray(sites) ? sites : [];
@@ -83,6 +58,35 @@ const Dashboard = () => {
     };
   }, [clients, quotes, sites, payments]);
 
+  // useEffect pour la redirection - TOUJOURS appelé
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate("/auth");
+    }
+  }, [user, loading, navigate]);
+
+  // useEffect pour récupérer le profil - TOUJOURS appelé
+  useEffect(() => {
+    if (!user) return;
+
+    // Récupérer le profil utilisateur
+    const fetchProfile = async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('first_name, last_name')
+        .eq('id', user.id)
+        .single();
+
+      if (data) {
+        const fullName = `${data.first_name || ''} ${data.last_name || ''}`.trim();
+        setUserName(fullName || 'Utilisateur');
+      }
+    };
+
+    fetchProfile();
+  }, [user]);
+
+  // useEffect pour mettre à jour les stats - TOUJOURS appelé
   useEffect(() => {
     setStats(computedStats);
   }, [computedStats]);
