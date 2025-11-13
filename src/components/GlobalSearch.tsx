@@ -41,12 +41,21 @@ export const GlobalSearch = () => {
     // Recherche dans les clients
     clients.forEach((client) => {
       const fullName = `${client.first_name} ${client.last_name}`.toLowerCase();
-      if (fullName.includes(term) || client.email?.toLowerCase().includes(term)) {
+      const email = client.email?.toLowerCase() || '';
+      const phone = client.phone?.toLowerCase() || '';
+      const address = client.address?.toLowerCase() || '';
+      
+      if (
+        fullName.includes(term) ||
+        email.includes(term) ||
+        phone.includes(term) ||
+        address.includes(term)
+      ) {
         searchResults.push({
           id: client.id,
           type: 'client',
           title: `${client.first_name} ${client.last_name}`,
-          subtitle: client.email || 'Pas d\'email',
+          subtitle: client.email || client.phone || 'Pas de contact',
           route: `/clients/${client.id}`,
         });
       }
@@ -56,15 +65,22 @@ export const GlobalSearch = () => {
     quotes.forEach((quote) => {
       const title = quote.title?.toLowerCase() || '';
       const description = quote.description?.toLowerCase() || '';
-      if (title.includes(term) || description.includes(term)) {
-        const clientName = quote.clients
-          ? `${quote.clients.first_name} ${quote.clients.last_name}`
-          : 'Client inconnu';
+      const amount = quote.amount?.toString() || '';
+      const clientName = quote.clients
+        ? `${quote.clients.first_name} ${quote.clients.last_name}`.toLowerCase()
+        : '';
+      
+      if (
+        title.includes(term) ||
+        description.includes(term) ||
+        amount.includes(term) ||
+        clientName.includes(term)
+      ) {
         searchResults.push({
           id: quote.id,
           type: 'quote',
           title: quote.title || 'Devis sans titre',
-          subtitle: `Client: ${clientName}`,
+          subtitle: `${quote.clients ? `${quote.clients.first_name} ${quote.clients.last_name}` : 'Client inconnu'} - ${quote.amount?.toFixed(2) || '0'}€`,
           route: `/quotes/${quote.id}`,
         });
       }
@@ -94,32 +110,64 @@ export const GlobalSearch = () => {
       const clientName = payment.clients
         ? `${payment.clients.first_name} ${payment.clients.last_name}`.toLowerCase()
         : '';
-      if (siteTitle.includes(term) || clientName.includes(term)) {
+      const amount = payment.amount?.toString() || '';
+      const status = payment.status?.toLowerCase() || '';
+      
+      if (
+        siteTitle.includes(term) ||
+        clientName.includes(term) ||
+        amount.includes(term) ||
+        status.includes(term)
+      ) {
+        const statusLabel = payment.status === 'paid' ? 'Payé' : payment.status === 'pending' ? 'En attente' : payment.status;
         searchResults.push({
           id: payment.id,
           type: 'payment',
           title: `${payment.amount.toFixed(2)}€ - ${payment.sites?.title || 'Paiement'}`,
-          subtitle: payment.clients
-            ? `${payment.clients.first_name} ${payment.clients.last_name}`
-            : 'Client inconnu',
+          subtitle: `${payment.clients ? `${payment.clients.first_name} ${payment.clients.last_name}` : 'Client inconnu'} - ${statusLabel}`,
           route: `/payments/${payment.id}`,
         });
       }
     });
 
-    return searchResults.slice(0, 10); // Limiter à 10 résultats
+    // Trier par pertinence (titre en premier, puis sous-titre)
+    const sortedResults = searchResults.sort((a, b) => {
+      const aTitleMatch = a.title.toLowerCase().includes(term);
+      const bTitleMatch = b.title.toLowerCase().includes(term);
+      if (aTitleMatch && !bTitleMatch) return -1;
+      if (!aTitleMatch && bTitleMatch) return 1;
+      return 0;
+    });
+
+    return sortedResults.slice(0, 15); // Limiter à 15 résultats
   }, [searchTerm, clients, quotes, sites, payments, user]);
 
   // Raccourci clavier Ctrl+K ou Cmd+K pour ouvrir la recherche
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignorer si on est dans un input, textarea ou select (sauf si c'est Ctrl+K)
+      const target = e.target as HTMLElement;
+      const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT';
+      
+      // Toujours permettre Ctrl+K / Cmd+K même dans les inputs
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
         setOpen(true);
+        // Focus sur l'input de recherche après ouverture
+        setTimeout(() => {
+          const searchInput = document.querySelector('[placeholder*="Tapez pour rechercher"]') as HTMLInputElement;
+          if (searchInput) {
+            searchInput.focus();
+          }
+        }, 100);
       }
-      if (e.key === 'Escape' && open) {
-        setOpen(false);
-        setSearchTerm('');
+      
+      // Échap pour fermer (uniquement si pas dans un input ou si la recherche est ouverte)
+      if (e.key === 'Escape' && (open || !isInput)) {
+        if (open) {
+          setOpen(false);
+          setSearchTerm('');
+        }
       }
     };
 
@@ -168,7 +216,16 @@ export const GlobalSearch = () => {
       <Button
         variant="outline"
         className="relative h-9 w-full justify-start text-sm text-muted-foreground sm:pr-12 md:w-40 lg:w-64"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          setOpen(true);
+          // Focus sur l'input après ouverture
+          setTimeout(() => {
+            const searchInput = document.querySelector('[placeholder*="Tapez pour rechercher"]') as HTMLInputElement;
+            if (searchInput) {
+              searchInput.focus();
+            }
+          }, 100);
+        }}
       >
         <Search className="mr-2 h-4 w-4" />
         <span className="hidden lg:inline-flex">Rechercher...</span>

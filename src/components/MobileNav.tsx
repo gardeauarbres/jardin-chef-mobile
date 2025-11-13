@@ -1,10 +1,18 @@
 import { NavLink } from './NavLink';
-import { Home, Users, FileText, Hammer, Wallet, Clock } from 'lucide-react';
+import { Home, Users, FileText, Hammer, Wallet, Clock, Search } from 'lucide-react';
+import { GlobalSearch } from './GlobalSearch';
+import { useState } from 'react';
 
 const MobileNav = () => {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50">
-      <div className="grid grid-cols-6 h-16">
+    <>
+      {/* Barre de recherche mobile - visible uniquement sur mobile */}
+      <div className="fixed bottom-20 left-0 right-0 px-4 pb-2 md:hidden z-40">
+        <GlobalSearch />
+      </div>
+      
+      <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50">
+        <div className="grid grid-cols-6 h-16">
         <NavLink
           to="/"
           className="flex flex-col items-center justify-center text-muted-foreground transition-colors"
@@ -60,6 +68,7 @@ const MobileNav = () => {
         </NavLink>
       </div>
     </nav>
+    </>
   );
 };
 
