@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, FileText, Hammer, Euro, TrendingUp, LogOut, Moon, Sun } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import MobileNav from '@/components/MobileNav';
 import { useAuth } from '@/hooks/useAuth';
@@ -30,27 +30,44 @@ const Dashboard = () => {
   // 2. useState (toujours appelés)
   const [userName, setUserName] = useState<string>("");
   
-  // 3. Hooks de données React Query (toujours appelés, même si user est null)
+  // 3. Refs pour stabilité
+  const userIdRef = useRef<string | null>(null);
+  const hasNavigatedRef = useRef(false);
+  
+  // 4. Hooks de données React Query (toujours appelés, même si user est null)
   const clientsQuery = useClients();
   const quotesQuery = useQuotes();
   const sitesQuery = useSites();
   const paymentsQuery = usePayments();
   
-  // 4. useEffect (toujours appelés dans le même ordre)
+  // 5. Stabiliser user.id pour éviter les changements de référence
+  const userId = useMemo(() => user?.id || null, [user?.id]);
+  
+  // 6. useEffect (toujours appelés dans le même ordre)
   useEffect(() => {
+    // Éviter les navigations multiples
+    if (hasNavigatedRef.current) return;
+    
     if (!loading && !user) {
+      hasNavigatedRef.current = true;
       navigate("/auth");
     }
   }, [user, loading, navigate]);
 
   useEffect(() => {
-    if (!user) return;
+    // Réinitialiser le flag de navigation si l'utilisateur change
+    if (userId !== userIdRef.current) {
+      hasNavigatedRef.current = false;
+      userIdRef.current = userId;
+    }
+    
+    if (!user || !userId) return;
 
     const fetchProfile = async () => {
       const { data } = await supabase
         .from('profiles')
         .select('first_name, last_name')
-        .eq('id', user.id)
+        .eq('id', userId)
         .single();
 
       if (data) {
@@ -60,27 +77,39 @@ const Dashboard = () => {
     };
 
     fetchProfile();
-  }, [user]);
+  }, [user, userId]);
 
-  // Calculer les stats directement dans le rendu - pas de useEffect pour éviter les problèmes
-  const clients = Array.isArray(clientsQuery.data) ? clientsQuery.data : [];
-  const quotes = Array.isArray(quotesQuery.data) ? quotesQuery.data : [];
-  const sites = Array.isArray(sitesQuery.data) ? sitesQuery.data : [];
-  const payments = Array.isArray(paymentsQuery.data) ? paymentsQuery.data : [];
+  // 7. Normaliser et calculer les stats avec useMemo pour stabilité
+  const clients = useMemo(() => {
+    return Array.isArray(clientsQuery.data) ? clientsQuery.data : [];
+  }, [clientsQuery.data]);
 
-  const activeSites = sites.filter((s: any) => s?.status === 'active').length;
-  const pendingPayments = payments
-    .filter((p: any) => p?.status === 'pending')
-    .reduce((sum: number, p: any) => sum + (p?.amount || 0), 0);
-  const acceptedQuotes = quotes.filter((q: any) => q?.status === 'accepted').length;
+  const quotes = useMemo(() => {
+    return Array.isArray(quotesQuery.data) ? quotesQuery.data : [];
+  }, [quotesQuery.data]);
 
-  // Calculer les stats pour l'affichage
-  const computedStats = {
-    totalClients: clients.length,
-    activeSites,
-    totalPending: pendingPayments,
-    acceptedQuotes,
-  };
+  const sites = useMemo(() => {
+    return Array.isArray(sitesQuery.data) ? sitesQuery.data : [];
+  }, [sitesQuery.data]);
+
+  const payments = useMemo(() => {
+    return Array.isArray(paymentsQuery.data) ? paymentsQuery.data : [];
+  }, [paymentsQuery.data]);
+
+  const computedStats = useMemo(() => {
+    const activeSites = sites.filter((s: any) => s?.status === 'active').length;
+    const pendingPayments = payments
+      .filter((p: any) => p?.status === 'pending')
+      .reduce((sum: number, p: any) => sum + (p?.amount || 0), 0);
+    const acceptedQuotes = quotes.filter((q: any) => q?.status === 'accepted').length;
+
+    return {
+      totalClients: clients.length,
+      activeSites,
+      totalPending: pendingPayments,
+      acceptedQuotes,
+    };
+  }, [clients, quotes, sites, payments]);
 
   if (loading) {
     return (
