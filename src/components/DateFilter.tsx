@@ -90,9 +90,9 @@ export const DateRangeFilter = ({
     onDateRangeChange(null, null);
   };
 
-  // S'assurer que startDate et endDate sont bien des Date ou null/undefined
-  const safeStartDate = startDate instanceof Date ? startDate : (startDate ? new Date(startDate) : undefined);
-  const safeEndDate = endDate instanceof Date ? endDate : (endDate ? new Date(endDate) : undefined);
+  // S'assurer que startDate et endDate sont bien des Date ou undefined (pas null pour react-day-picker)
+  const safeStartDate = startDate instanceof Date ? startDate : undefined;
+  const safeEndDate = endDate instanceof Date ? endDate : undefined;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -136,7 +136,13 @@ export const DateRangeFilter = ({
             <Calendar
               mode="single"
               selected={safeStartDate}
-              onSelect={(date) => onDateRangeChange(date || null, safeEndDate || null)}
+              onSelect={(date) => {
+                if (date) {
+                  onDateRangeChange(date, safeEndDate || null);
+                } else {
+                  onDateRangeChange(null, safeEndDate || null);
+                }
+              }}
               initialFocus
             />
           </div>
@@ -145,7 +151,13 @@ export const DateRangeFilter = ({
             <Calendar
               mode="single"
               selected={safeEndDate}
-              onSelect={(date) => onDateRangeChange(safeStartDate || null, date || null)}
+              onSelect={(date) => {
+                if (date) {
+                  onDateRangeChange(safeStartDate || null, date);
+                } else {
+                  onDateRangeChange(safeStartDate || null, null);
+                }
+              }}
               initialFocus
             />
           </div>
