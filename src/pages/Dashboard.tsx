@@ -42,19 +42,23 @@ const Dashboard = () => {
   // 5. Stabiliser user.id pour éviter les changements de référence
   const userId = useMemo(() => user?.id || null, [user?.id]);
   
-  // 6. useEffect (toujours appelés dans le même ordre)
+  // 6. Un seul useEffect pour toutes les opérations liées à l'utilisateur
   useEffect(() => {
+    // Gérer la navigation si pas d'utilisateur
     if (!loading && !user) {
       if (!hasNavigatedRef.current) {
         hasNavigatedRef.current = true;
         navigate("/auth");
       }
-    } else if (user) {
+      return;
+    }
+
+    // Réinitialiser le flag de navigation si l'utilisateur existe
+    if (user) {
       hasNavigatedRef.current = false;
     }
-  }, [user, loading, navigate]);
 
-  useEffect(() => {
+    // Charger le profil si l'utilisateur existe
     if (!user || !userId) {
       lastUserIdRef.current = null;
       return;
@@ -81,7 +85,7 @@ const Dashboard = () => {
     };
 
     fetchProfile();
-  }, [userId]);
+  }, [user, userId, loading, navigate]);
 
   // 7. Normaliser et calculer les stats avec useMemo pour stabilité
   const clients = useMemo(() => {
