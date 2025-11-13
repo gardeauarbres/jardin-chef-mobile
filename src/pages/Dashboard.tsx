@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, FileText, Hammer, Euro, TrendingUp, LogOut, Moon, Sun } from 'lucide-react';
-import { useMemo, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import MobileNav from '@/components/MobileNav';
 import { useAuth } from '@/hooks/useAuth';
@@ -36,34 +36,18 @@ const Dashboard = () => {
   const sitesQuery = useSites();
   const paymentsQuery = usePayments();
 
-  // Normaliser les données et calculer les stats en une seule fois avec useMemo
-  // Utiliser les données brutes des queries comme dépendances pour éviter les problèmes de référence
-  const computedStats = useMemo(() => {
-    // Normaliser les données
-    const clients = Array.isArray(clientsQuery.data) ? clientsQuery.data : [];
-    const quotes = Array.isArray(quotesQuery.data) ? quotesQuery.data : [];
-    const sites = Array.isArray(sitesQuery.data) ? sitesQuery.data : [];
-    const payments = Array.isArray(paymentsQuery.data) ? paymentsQuery.data : [];
+  // Normaliser les données - calculer directement sans useMemo pour éviter les problèmes
+  const clients = Array.isArray(clientsQuery.data) ? clientsQuery.data : [];
+  const quotes = Array.isArray(quotesQuery.data) ? quotesQuery.data : [];
+  const sites = Array.isArray(sitesQuery.data) ? sitesQuery.data : [];
+  const payments = Array.isArray(paymentsQuery.data) ? paymentsQuery.data : [];
 
-    // Calculer les stats
-    const activeSites = sites.filter((s: any) => s?.status === 'active').length;
-    const pendingPayments = payments
-      .filter((p: any) => p?.status === 'pending')
-      .reduce((sum: number, p: any) => sum + (p?.amount || 0), 0);
-    const acceptedQuotes = quotes.filter((q: any) => q?.status === 'accepted').length;
-
-    return {
-      totalClients: clients.length,
-      activeSites,
-      totalPending: pendingPayments,
-      acceptedQuotes,
-    };
-  }, [
-    clientsQuery.data,
-    quotesQuery.data,
-    sitesQuery.data,
-    paymentsQuery.data
-  ]);
+  // Calculer les stats directement
+  const activeSites = sites.filter((s: any) => s?.status === 'active').length;
+  const pendingPayments = payments
+    .filter((p: any) => p?.status === 'pending')
+    .reduce((sum: number, p: any) => sum + (p?.amount || 0), 0);
+  const acceptedQuotes = quotes.filter((q: any) => q?.status === 'accepted').length;
 
 
   // useEffect pour la redirection - TOUJOURS appelé
@@ -96,8 +80,25 @@ const Dashboard = () => {
 
   // useEffect pour mettre à jour les stats - TOUJOURS appelé
   useEffect(() => {
-    setStats(computedStats);
-  }, [computedStats]);
+    // Recalculer à chaque fois que les données changent
+    const currentClients = Array.isArray(clientsQuery.data) ? clientsQuery.data : [];
+    const currentQuotes = Array.isArray(quotesQuery.data) ? quotesQuery.data : [];
+    const currentSites = Array.isArray(sitesQuery.data) ? sitesQuery.data : [];
+    const currentPayments = Array.isArray(paymentsQuery.data) ? paymentsQuery.data : [];
+
+    const currentActiveSites = currentSites.filter((s: any) => s?.status === 'active').length;
+    const currentPendingPayments = currentPayments
+      .filter((p: any) => p?.status === 'pending')
+      .reduce((sum: number, p: any) => sum + (p?.amount || 0), 0);
+    const currentAcceptedQuotes = currentQuotes.filter((q: any) => q?.status === 'accepted').length;
+
+    setStats({
+      totalClients: currentClients.length,
+      activeSites: currentActiveSites,
+      totalPending: currentPendingPayments,
+      acceptedQuotes: currentAcceptedQuotes,
+    });
+  }, [clientsQuery.data, quotesQuery.data, sitesQuery.data, paymentsQuery.data]);
 
   if (loading) {
     return (
