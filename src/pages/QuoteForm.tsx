@@ -14,6 +14,7 @@ import { ArrowLeft } from "lucide-react";
 import { quoteSchema, QuoteFormData } from "@/lib/validations";
 import { useAuth } from "@/hooks/useAuth";
 import { useSupabaseMutation } from "@/hooks/useSupabaseQuery";
+import MobileNav from "@/components/MobileNav";
 
 interface Client {
   id: string;
