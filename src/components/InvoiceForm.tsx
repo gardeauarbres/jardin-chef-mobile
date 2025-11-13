@@ -25,7 +25,7 @@ import { useQuotes, useSites } from '@/hooks/useSupabaseQuery';
 import { toast } from 'sonner';
 import { CalendarIcon, Plus, FileText } from 'lucide-react';
 import { format, addDays } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { fr } from 'date-fns/locale/fr';
 import { Calendar } from '@/components/ui/calendar';
 import {
   Popover,

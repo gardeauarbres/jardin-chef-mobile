@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useInterventions, InterventionWithSite } from '@/hooks/useInterventions';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameDay, isWithinInterval, addDays, eachDayOfInterval, startOfDay, endOfDay } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { fr } from 'date-fns/locale/fr';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, Users, MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {

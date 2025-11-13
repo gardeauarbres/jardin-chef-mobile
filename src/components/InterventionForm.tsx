@@ -26,7 +26,7 @@ import { useSites, useEmployees } from '@/hooks/useSupabaseQuery';
 import { toast } from 'sonner';
 import { CalendarIcon, Clock, Plus } from 'lucide-react';
 import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { fr } from 'date-fns/locale/fr';
 import { Calendar } from '@/components/ui/calendar';
 import {
   Popover,

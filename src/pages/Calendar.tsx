@@ -26,7 +26,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { fr } from 'date-fns/locale/fr';
 import { Clock, MapPin, Users, Trash2, Edit, Calendar as CalendarIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
