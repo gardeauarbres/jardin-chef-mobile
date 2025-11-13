@@ -1,0 +1,33 @@
+{
+  "name": "Jardin Chef Mobile - Gestion pour Paysagistes",
+  "short_name": "Jardin Chef",
+  "description": "Application mobile de gestion complète pour paysagistes : clients, devis, chantiers, paiements, employés et heures travaillées",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4ade80",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/planette.gif",
+      "sizes": "192x192",
+      "type": "image/gif",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/planette.gif",
+      "sizes": "512x512",
+      "type": "image/gif",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "lang": "fr-FR",
+  "dir": "ltr"
+}
+
