@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Pagination } from '@/components/Pagination';
+import { SortableList, SortOption } from '@/components/SortableList';
+import { DateRangeFilter } from '@/components/DateFilter';
 import MobileNav from '@/components/MobileNav';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -40,6 +42,8 @@ const Clients = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
 
   // Utiliser le hook optimisé avec cache
   const { data: clients = [], isLoading, error } = useClients();
@@ -76,27 +80,35 @@ const Clients = () => {
 
   // Optimisation: useMemo pour le filtrage
   const filteredClients = useMemo(() => {
-    if (!searchTerm) return clients;
-    const term = searchTerm.toLowerCase();
-    return clients.filter(client =>
-      `${client.first_name} ${client.last_name}`.toLowerCase().includes(term) ||
-      client.email.toLowerCase().includes(term) ||
-      client.phone.includes(searchTerm)
-    );
-  }, [clients, searchTerm]);
+    let filtered = clients;
 
-  // Pagination
-  const totalPages = Math.ceil(filteredClients.length / ITEMS_PER_PAGE);
-  const paginatedClients = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    const end = start + ITEMS_PER_PAGE;
-    return filteredClients.slice(start, end);
-  }, [filteredClients, currentPage]);
+    // Recherche textuelle
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(client =>
+        `${client.first_name} ${client.last_name}`.toLowerCase().includes(term) ||
+        client.email.toLowerCase().includes(term) ||
+        client.phone.includes(searchTerm)
+      );
+    }
 
-  // Réinitialiser la page quand la recherche change
+    // Filtre par date de création
+    if (startDate || endDate) {
+      filtered = filtered.filter(client => {
+        const createdDate = new Date(client.created_at);
+        if (startDate && createdDate < startDate) return false;
+        if (endDate && createdDate > endDate) return false;
+        return true;
+      });
+    }
+
+    return filtered;
+  }, [clients, searchTerm, startDate, endDate]);
+
+  // Réinitialiser la page quand les filtres changent
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm]);
+  }, [searchTerm, startDate, endDate]);
 
   const handleCall = (phone: string) => {
     window.location.href = `tel:${phone}`;
@@ -167,8 +179,41 @@ const Clients = () => {
           </Button>
         </div>
 
-        <div className="space-y-3">
-          {paginatedClients.length === 0 ? (
+        <div className="flex gap-2 flex-wrap">
+          <DateRangeFilter
+            startDate={startDate}
+            endDate={endDate}
+            onDateRangeChange={(start, end) => {
+              setStartDate(start);
+              setEndDate(end);
+              setCurrentPage(1);
+            }}
+          />
+        </div>
+
+        <SortableList
+          items={filteredClients}
+          sortOptions={[
+            { key: 'created_at', label: 'Date de création', getValue: (c) => new Date(c.created_at) },
+            { key: 'first_name', label: 'Prénom' },
+            { key: 'last_name', label: 'Nom' },
+            { key: 'email', label: 'Email' },
+          ] as SortOption<Client>[]}
+          defaultSort={{ key: 'created_at', direction: 'desc' }}
+        >
+          {(sortedClients) => {
+            // Pagination sur les clients triés
+            const totalPages = Math.ceil(sortedClients.length / ITEMS_PER_PAGE);
+            const paginatedClients = useMemo(() => {
+              const start = (currentPage - 1) * ITEMS_PER_PAGE;
+              const end = start + ITEMS_PER_PAGE;
+              return sortedClients.slice(start, end);
+            }, [sortedClients, currentPage]);
+
+            return (
+              <>
+                <div className="space-y-3">
+                  {paginatedClients.length === 0 ? (
             <Card>
               <CardContent className="p-6 text-center">
                 <p className="text-muted-foreground">
@@ -234,15 +279,19 @@ const Clients = () => {
               </Card>
             ))
           )}
-        </div>
+                </div>
 
-        {totalPages > 1 && (
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-          />
-        )}
+                {totalPages > 1 && (
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                  />
+                )}
+              </>
+            );
+          }}
+        </SortableList>
       </div>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
