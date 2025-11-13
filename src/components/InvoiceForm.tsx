@@ -193,6 +193,9 @@ export function InvoiceForm({
             {invoice ? 'Modifier la facture' : 'Nouvelle facture'}
           </DialogTitle>
         </DialogHeader>
+        <div className="sr-only">
+          Formulaire de création ou modification de facture
+        </div>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           {/* Devis */}
           <div className="space-y-2">
