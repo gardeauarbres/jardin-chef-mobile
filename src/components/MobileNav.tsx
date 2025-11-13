@@ -1,5 +1,5 @@
 import { NavLink } from './NavLink';
-import { Home, Users, FileText, Hammer, Wallet, Clock } from 'lucide-react';
+import { Home, Users, FileText, Hammer, Wallet, Clock, Calendar } from 'lucide-react';
 import { GlobalSearch } from './GlobalSearch';
 
 const MobileNav = () => {
@@ -11,7 +11,7 @@ const MobileNav = () => {
       </div>
       
       <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50">
-        <div className="grid grid-cols-6 h-16">
+        <div className="grid grid-cols-7 h-16">
         <NavLink
           to="/"
           className="flex flex-col items-center justify-center text-muted-foreground transition-colors"
@@ -64,6 +64,15 @@ const MobileNav = () => {
         >
           <Wallet className="h-5 w-5" />
           <span className="text-xs mt-1">Paiements</span>
+        </NavLink>
+        
+        <NavLink
+          to="/calendar"
+          className="flex flex-col items-center justify-center text-muted-foreground transition-colors"
+          activeClassName="text-primary"
+        >
+          <Calendar className="h-5 w-5" />
+          <span className="text-xs mt-1">Calendrier</span>
         </NavLink>
       </div>
     </nav>

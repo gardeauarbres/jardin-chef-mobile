@@ -219,6 +219,62 @@ export type Database = {
           },
         ]
       }
+      interventions: {
+        Row: {
+          id: string
+          user_id: string
+          site_id: string
+          title: string
+          description: string | null
+          start_time: string
+          end_time: string
+          status: string
+          employee_ids: string[] | null
+          reminder_sent: boolean
+          reminder_time: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          site_id: string
+          title: string
+          description?: string | null
+          start_time: string
+          end_time: string
+          status?: string
+          employee_ids?: string[] | null
+          reminder_sent?: boolean
+          reminder_time?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          site_id?: string
+          title?: string
+          description?: string | null
+          start_time?: string
+          end_time?: string
+          status?: string
+          employee_ids?: string[] | null
+          reminder_sent?: boolean
+          reminder_time?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interventions_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employees: {
         Row: {
           id: string
