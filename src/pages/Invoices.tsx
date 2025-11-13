@@ -132,6 +132,28 @@ export default function Invoices() {
     return filteredAndSortedInvoices.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredAndSortedInvoices, currentPage]);
 
+  // Calculer les statistiques (AVANT tout return conditionnel)
+  const stats = useMemo(() => {
+    if (!invoices) return { total: 0, unpaid: 0, overdue: 0, totalAmount: 0 };
+    
+    const unpaid = invoices.filter((i) => i.status !== 'paid' && i.status !== 'cancelled');
+    const overdue = invoices.filter((i) => {
+      if (i.status === 'paid' || i.status === 'cancelled') return false;
+      const dueDate = new Date(i.due_date);
+      return dueDate < new Date();
+    });
+    const totalAmount = invoices
+      .filter((i) => i.status !== 'cancelled')
+      .reduce((sum, i) => sum + i.total_amount, 0);
+
+    return {
+      total: invoices.length,
+      unpaid: unpaid.length,
+      overdue: overdue.length,
+      totalAmount,
+    };
+  }, [invoices]);
+
   const handleDelete = async () => {
     if (!invoiceToDelete) return;
 
@@ -190,28 +212,6 @@ export default function Invoices() {
     navigate('/auth');
     return null;
   }
-
-  // Calculer les statistiques
-  const stats = useMemo(() => {
-    if (!invoices) return { total: 0, unpaid: 0, overdue: 0, totalAmount: 0 };
-    
-    const unpaid = invoices.filter((i) => i.status !== 'paid' && i.status !== 'cancelled');
-    const overdue = invoices.filter((i) => {
-      if (i.status === 'paid' || i.status === 'cancelled') return false;
-      const dueDate = new Date(i.due_date);
-      return dueDate < new Date();
-    });
-    const totalAmount = invoices
-      .filter((i) => i.status !== 'cancelled')
-      .reduce((sum, i) => sum + i.total_amount, 0);
-
-    return {
-      total: invoices.length,
-      unpaid: unpaid.length,
-      overdue: overdue.length,
-      totalAmount,
-    };
-  }, [invoices]);
 
   return (
     <div className="min-h-screen bg-background pb-20">
