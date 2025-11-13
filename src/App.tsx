@@ -6,6 +6,7 @@ import Dashboard from "./pages/Dashboard";
 import Clients from "./pages/Clients";
 import ClientForm from "./pages/ClientForm";
 import Quotes from "./pages/Quotes";
+import QuoteForm from "./pages/QuoteForm";
 import Sites from "./pages/Sites";
 import Payments from "./pages/Payments";
 import Employees from "./pages/Employees";
@@ -26,6 +27,8 @@ const App = () => (
           <Route path="/clients/new" element={<ClientForm />} />
           <Route path="/clients/:id" element={<ClientForm />} />
           <Route path="/quotes" element={<Quotes />} />
+          <Route path="/quotes/new" element={<QuoteForm />} />
+          <Route path="/quotes/:id" element={<QuoteForm />} />
           <Route path="/sites" element={<Sites />} />
           <Route path="/employees" element={<Employees />} />
           <Route path="/payments" element={<Payments />} />

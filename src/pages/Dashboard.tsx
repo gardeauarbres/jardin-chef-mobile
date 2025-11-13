@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 const Dashboard = () => {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
+  const [userName, setUserName] = useState<string>("");
   const [stats, setStats] = useState({
     totalClients: 0,
     activeSites: 0,
@@ -26,19 +27,27 @@ const Dashboard = () => {
   useEffect(() => {
     if (!user) return;
 
-    const fetchStats = async () => {
-      const { data: clients } = await supabase.from('clients').select('*').eq('user_id', user.id);
-      const { data: quotes } = await supabase.from('quotes').select('*').eq('user_id', user.id);
+    const fetchData = async () => {
+      const [clientsRes, quotesRes, profileRes] = await Promise.all([
+        supabase.from('clients').select('*').eq('user_id', user.id),
+        supabase.from('quotes').select('*').eq('user_id', user.id),
+        supabase.from('profiles').select('first_name, last_name').eq('id', user.id).single(),
+      ]);
 
       setStats({
-        totalClients: clients?.length || 0,
+        totalClients: clientsRes.data?.length || 0,
         activeSites: 0,
         totalPending: 0,
-        acceptedQuotes: quotes?.filter(q => q.status === 'accepted').length || 0,
+        acceptedQuotes: quotesRes.data?.filter(q => q.status === 'accepted').length || 0,
       });
+
+      if (profileRes.data) {
+        const fullName = `${profileRes.data.first_name || ''} ${profileRes.data.last_name || ''}`.trim();
+        setUserName(fullName || 'Utilisateur');
+      }
     };
 
-    fetchStats();
+    fetchData();
   }, [user]);
 
   if (loading) {
@@ -54,7 +63,7 @@ const Dashboard = () => {
       <header className="bg-primary text-primary-foreground p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Chantier Mika</h1>
+            <h1 className="text-2xl font-bold">{userName || 'Chargement...'}</h1>
             <p className="text-sm opacity-90 mt-1">Tableau de bord</p>
           </div>
           <Button variant="secondary" size="icon" onClick={signOut}>

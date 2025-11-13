@@ -72,3 +72,38 @@ export const signInSchema = z.object({
 });
 
 export type SignInFormData = z.infer<typeof signInSchema>;
+
+// Schéma de validation pour les devis
+export const quoteSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(3, "Le titre doit contenir au moins 3 caractères")
+    .max(100, "Le titre ne peut pas dépasser 100 caractères"),
+  description: z
+    .string()
+    .trim()
+    .min(10, "La description doit contenir au moins 10 caractères")
+    .max(2000, "La description ne peut pas dépasser 2000 caractères"),
+  amount: z
+    .string()
+    .regex(/^\d+(\.\d{1,2})?$/, "Le montant doit être un nombre valide (ex: 1000 ou 1000.50)")
+    .refine((val) => parseFloat(val) > 0, "Le montant doit être supérieur à 0")
+    .refine((val) => parseFloat(val) <= 999999.99, "Le montant ne peut pas dépasser 999 999,99 €"),
+  depositPercentage: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || (parseFloat(val) >= 0 && parseFloat(val) <= 100),
+      "Le pourcentage doit être entre 0 et 100"
+    ),
+  clientId: z
+    .string()
+    .uuid("Veuillez sélectionner un client valide"),
+  status: z.enum(["draft", "sent", "accepted", "rejected"], {
+    errorMap: () => ({ message: "Statut invalide" }),
+  }),
+});
+
+export type QuoteFormData = z.infer<typeof quoteSchema>;
+
