@@ -17,13 +17,78 @@ if (!apiKey) {
 }
 
 const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
-// Utiliser gemini-1.5-flash (modèle actuel recommandé, plus rapide et moins cher)
-// Alternative: gemini-1.5-pro pour plus de puissance
-const model = genAI ? genAI.getGenerativeModel({ model: 'gemini-1.5-flash' }) : null;
+
+// Liste des modèles à essayer dans l'ordre de préférence
+// gemini-2.0-flash est le modèle le plus récent et performant
+const MODEL_NAMES = [
+  'gemini-2.0-flash',
+  'gemini-1.5-flash-latest',
+  'gemini-1.5-flash',
+  'gemini-1.5-pro-latest',
+  'gemini-1.5-pro',
+  'gemini-pro',
+];
+
+// Fonction helper pour obtenir un modèle fonctionnel
+function getAvailableModel() {
+  if (!genAI) return null;
+  
+  // Essayer le premier modèle par défaut
+  try {
+    return genAI.getGenerativeModel({ model: MODEL_NAMES[0] });
+  } catch (error) {
+    console.warn(`[Gemini] Modèle ${MODEL_NAMES[0]} non disponible, utilisation du fallback`);
+  }
+  
+  // Si le premier échoue, essayer les autres
+  for (let i = 1; i < MODEL_NAMES.length; i++) {
+    try {
+      return genAI.getGenerativeModel({ model: MODEL_NAMES[i] });
+    } catch (error) {
+      // Continuer à essayer
+    }
+  }
+  
+  // Si aucun modèle ne fonctionne, retourner le premier quand même
+  // L'erreur sera gérée lors de l'utilisation
+  return genAI.getGenerativeModel({ model: MODEL_NAMES[0] });
+}
+
+const model = getAvailableModel();
 
 /**
  * Génère une description détaillée pour un devis de paysagiste
  */
+// Fonction helper pour essayer plusieurs modèles en cas d'échec
+async function tryWithMultipleModels(prompt: string): Promise<string> {
+  if (!genAI) {
+    throw new Error('Gemini API n\'est pas configurée. Vérifiez VITE_GEMINI_API_KEY.');
+  }
+
+  let lastError: any = null;
+  
+  for (const modelName of MODEL_NAMES) {
+    try {
+      const currentModel = genAI.getGenerativeModel({ model: modelName });
+      const result = await currentModel.generateContent(prompt);
+      const response = await result.response;
+      return response.text().trim();
+    } catch (error: any) {
+      lastError = error;
+      // Si c'est une erreur 404 (modèle non trouvé), essayer le suivant
+      if (error?.message?.includes('404') || error?.message?.includes('not found')) {
+        console.warn(`[Gemini] Modèle ${modelName} non disponible, essai du suivant...`);
+        continue;
+      }
+      // Pour les autres erreurs, relancer
+      throw error;
+    }
+  }
+  
+  // Si tous les modèles ont échoué
+  throw new Error(`Aucun modèle Gemini disponible. Dernière erreur: ${lastError?.message || 'Inconnue'}`);
+}
+
 export async function generateQuoteDescription(title: string): Promise<string> {
   if (!model) {
     throw new Error('Gemini API n\'est pas configurée. Vérifiez VITE_GEMINI_API_KEY.');
@@ -42,9 +107,7 @@ Génère une description de 3-5 phrases qui inclut:
 
 Réponds UNIQUEMENT avec la description, sans introduction ni conclusion.`;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    return response.text().trim();
+    return await tryWithMultipleModels(prompt);
   } catch (error) {
     console.error('Erreur lors de la génération de description:', error);
     throw new Error('Impossible de générer la description. Veuillez réessayer.');
@@ -84,9 +147,7 @@ Réponds UNIQUEMENT au format JSON suivant (sans markdown, sans code block):
   "reasoning": "explication courte en français (2-3 phrases)"
 }`;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text().trim();
+    const text = await tryWithMultipleModels(prompt);
     
     // Nettoyer le texte pour extraire le JSON
     const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -122,9 +183,7 @@ Considère les pratiques courantes en France pour les travaux paysagers.
 
 Réponds UNIQUEMENT avec un nombre entre 0 et 100 (sans unité, sans explication).`;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text().trim();
+    const text = await tryWithMultipleModels(prompt);
     
     // Extraire le nombre
     const match = text.match(/\d+/);
@@ -168,9 +227,7 @@ Réponds de manière concise, utile et professionnelle en français. Si la quest
 
 Réponds UNIQUEMENT avec la réponse, sans introduction ni conclusion.`;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    return response.text().trim();
+    return await tryWithMultipleModels(prompt);
   } catch (error) {
     console.error('Erreur lors de la question à l\'assistant:', error);
     throw new Error('Impossible d\'obtenir une réponse. Veuillez réessayer.');
@@ -204,9 +261,7 @@ Calcule le taux de conversion et donne 3-4 recommandations concrètes pour amél
 
 Réponds UNIQUEMENT avec l'analyse et les recommandations en français, de manière concise et actionnable.`;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    return response.text().trim();
+    return await tryWithMultipleModels(prompt);
   } catch (error) {
     console.error('Erreur lors de l\'analyse business:', error);
     throw new Error('Impossible d\'analyser les données. Veuillez réessayer.');
