@@ -5,21 +5,20 @@ import { toast } from 'sonner';
 import { Bell } from 'lucide-react';
 
 export const PaymentNotifications = () => {
-  // TOUJOURS appeler les hooks dans le même ordre
+  // ============================================
+  // TOUS LES HOOKS DOIVENT ÊTRE ICI, AVANT TOUT RETURN
+  // ============================================
+  
+  // 1. Hooks de contexte (toujours appelés)
   const { user, loading } = useAuth();
-  // Le hook usePayments a déjà enabled: !!user, donc il ne fera rien si user est null
-  // Mais le hook est TOUJOURS appelé, même si enabled est false
+  
+  // 2. Hooks de données (toujours appelés, même si user est null)
   const paymentsQuery = usePayments();
   
-  // Ne rien faire si l'utilisateur n'est pas connecté ou en cours de chargement
-  if (loading || !user) {
-    return null;
-  }
-
-  // Normaliser les données après la vérification
+  // 3. Normaliser les données (toujours exécuté)
   const payments = Array.isArray(paymentsQuery.data) ? paymentsQuery.data : [];
 
-  // Calculer directement sans useMemo pour éviter les problèmes
+  // 4. Calculer les paiements (toujours exécuté)
   const overduePayments = payments.filter(p => {
     if (p.status !== 'pending') return false;
     if (!p.due_date) return false;
@@ -37,7 +36,11 @@ export const PaymentNotifications = () => {
     return dueDate >= now && dueDate <= in7Days;
   });
 
+  // 5. useEffect (toujours appelés dans le même ordre)
   useEffect(() => {
+    // Ne rien faire si l'utilisateur n'est pas connecté ou en cours de chargement
+    if (loading || !user) return;
+    
     // Afficher une notification pour les paiements en retard
     if (overduePayments.length > 0) {
       const total = overduePayments.reduce((sum, p) => sum + p.amount, 0);
@@ -49,9 +52,12 @@ export const PaymentNotifications = () => {
         }
       );
     }
-  }, [overduePayments.length]);
+  }, [loading, user, overduePayments.length]);
 
   useEffect(() => {
+    // Ne rien faire si l'utilisateur n'est pas connecté ou en cours de chargement
+    if (loading || !user) return;
+    
     // Afficher une notification pour les paiements à venir
     if (upcomingPayments.length > 0 && overduePayments.length === 0) {
       const total = upcomingPayments.reduce((sum, p) => sum + p.amount, 0);
@@ -63,8 +69,9 @@ export const PaymentNotifications = () => {
         }
       );
     }
-  }, [upcomingPayments.length, overduePayments.length]);
+  }, [loading, user, upcomingPayments.length, overduePayments.length]);
 
+  // 6. Return (toujours appelé)
   return null; // Ce composant ne rend rien visuellement
 };
 
