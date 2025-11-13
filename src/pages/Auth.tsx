@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -146,46 +146,55 @@ const Auth = () => {
           ) : (
             <Form {...signUpForm}>
               <form onSubmit={signUpForm.handleSubmit(onSignUp)} className="space-y-4">
-                <FormField
-                  control={signUpForm.control}
-                  name="firstName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Prénom</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="Jean" 
-                          value={field.value}
-                          onChange={field.onChange}
-                          onBlur={field.onBlur}
-                          name={field.name}
-                          ref={field.ref}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                <div className="space-y-2">
+                  <label htmlFor="firstName" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Prénom
+                  </label>
+                  <Controller
+                    control={signUpForm.control}
+                    name="firstName"
+                    render={({ field }) => (
+                      <Input 
+                        id="firstName"
+                        placeholder="Jean" 
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(e.target.value)}
+                        onBlur={field.onBlur}
+                        ref={field.ref}
+                      />
+                    )}
+                  />
+                  {signUpForm.formState.errors.firstName && (
+                    <p className="text-sm font-medium text-destructive">
+                      {signUpForm.formState.errors.firstName.message}
+                    </p>
                   )}
-                />
-                <FormField
-                  control={signUpForm.control}
-                  name="lastName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nom</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="Dupont" 
-                          value={field.value}
-                          onChange={field.onChange}
-                          onBlur={field.onBlur}
-                          name={field.name}
-                          ref={field.ref}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                </div>
+                
+                <div className="space-y-2">
+                  <label htmlFor="lastName" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Nom
+                  </label>
+                  <Controller
+                    control={signUpForm.control}
+                    name="lastName"
+                    render={({ field }) => (
+                      <Input 
+                        id="lastName"
+                        placeholder="Dupont" 
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(e.target.value)}
+                        onBlur={field.onBlur}
+                        ref={field.ref}
+                      />
+                    )}
+                  />
+                  {signUpForm.formState.errors.lastName && (
+                    <p className="text-sm font-medium text-destructive">
+                      {signUpForm.formState.errors.lastName.message}
+                    </p>
                   )}
-                />
+                </div>
                 <FormField
                   control={signUpForm.control}
                   name="email"
