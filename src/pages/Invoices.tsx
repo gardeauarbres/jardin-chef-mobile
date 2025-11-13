@@ -291,14 +291,15 @@ export default function Invoices() {
             </div>
 
             <div className="flex flex-col md:flex-row gap-4">
-              <DateRangeFilter
+              {/* Temporairement désactivé pour debug */}
+              {/* <DateRangeFilter
                 onDateRangeChange={(start, end) => {
                   setDateRange({ start, end });
                   setCurrentPage(1);
                 }}
                 startDate={dateRange.start}
                 endDate={dateRange.end}
-              />
+              /> */}
               <SortableList
                 sortOptions={sortOptions}
                 defaultSort="created_at-desc"
