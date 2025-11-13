@@ -1,12 +1,20 @@
 import { useEffect, useMemo } from 'react';
 import { usePayments } from '@/hooks/useSupabaseQuery';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Bell } from 'lucide-react';
 
 export const PaymentNotifications = () => {
+  const { user } = useAuth();
   const { data: payments = [] } = usePayments();
 
+  // Ne rien faire si l'utilisateur n'est pas connecté
+  if (!user) {
+    return null;
+  }
+
   const overduePayments = useMemo(() => {
+    if (!user || !payments.length) return [];
     const now = new Date();
     return payments.filter(p => {
       if (p.status !== 'pending') return false;
@@ -14,9 +22,10 @@ export const PaymentNotifications = () => {
       const dueDate = new Date(p.due_date);
       return dueDate < now;
     });
-  }, [payments]);
+  }, [payments, user]);
 
   const upcomingPayments = useMemo(() => {
+    if (!user || !payments.length) return [];
     const now = new Date();
     const in7Days = new Date();
     in7Days.setDate(now.getDate() + 7);
@@ -27,7 +36,7 @@ export const PaymentNotifications = () => {
       const dueDate = new Date(p.due_date);
       return dueDate >= now && dueDate <= in7Days;
     });
-  }, [payments]);
+  }, [payments, user]);
 
   useEffect(() => {
     // Afficher une notification pour les paiements en retard
