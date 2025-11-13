@@ -1,73 +1,109 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
-  <!-- Arbre formant un profil humain -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- Arbre formant un profil humain - Version détaillée -->
   <defs>
     <linearGradient id="skyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#87CEEB;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#E0F6FF;stop-opacity:1" />
+      <stop offset="0%" style="stop-color:#6BA3D8;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#87CEEB;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#B0E0E6;stop-opacity:1" />
     </linearGradient>
     <linearGradient id="treeGradient" x1="0%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" style="stop-color:#8B4513;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#654321;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#654321;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3E2723;stop-opacity:1" />
     </linearGradient>
     <linearGradient id="grassGradient" x1="0%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" style="stop-color:#90EE90;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#228B22;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#7CB342;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#558B2F;stop-opacity:1" />
     </linearGradient>
+    <radialGradient id="headGradient" cx="50%" cy="30%" r="50%">
+      <stop offset="0%" style="stop-color:#2d5016;stop-opacity:0.95" />
+      <stop offset="100%" style="stop-color:#1a3d0d;stop-opacity:0.85" />
+    </radialGradient>
   </defs>
   
-  <!-- Ciel -->
-  <rect width="128" height="80" fill="url(#skyGradient)"/>
+  <!-- Ciel avec dégradé -->
+  <rect width="256" height="160" fill="url(#skyGradient)"/>
   
-  <!-- Herbe -->
-  <rect y="80" width="128" height="48" fill="url(#grassGradient)"/>
+  <!-- Herbe avec dégradé -->
+  <rect y="160" width="256" height="96" fill="url(#grassGradient)"/>
   
-  <!-- Tronc de l'arbre -->
-  <rect x="58" y="80" width="12" height="48" fill="url(#treeGradient)" rx="2"/>
+  <!-- Tronc de l'arbre robuste et texturé -->
+  <rect x="116" y="160" width="24" height="96" fill="url(#treeGradient)" rx="3"/>
+  <!-- Texture du tronc -->
+  <rect x="120" y="170" width="4" height="80" fill="#3E2723" opacity="0.3"/>
+  <rect x="132" y="175" width="4" height="75" fill="#3E2723" opacity="0.3"/>
   
-  <!-- Branches formant le profil de tête (côté droit - visage) -->
-  <path d="M 70 30 
-           Q 75 25 78 30 
-           Q 80 35 79 40 
-           Q 78 45 76 48 
-           Q 74 50 72 52 
-           Q 70 54 68 55 
-           Q 66 56 64 56 
-           Q 62 56 60 55 
-           Q 58 54 56 52 
-           Q 54 50 52 48 
-           Q 50 45 49 40 
-           Q 48 35 50 30 
-           Q 52 25 58 30 
+  <!-- Branches formant le profil de tête - Visage de profil (côté droit) -->
+  <!-- Front, nez, bouche, menton -->
+  <path d="M 140 60 
+           Q 150 50 160 60 
+           Q 165 65 164 75 
+           Q 163 85 160 95 
+           Q 157 105 152 110 
+           Q 147 115 140 118 
+           Q 133 120 128 120 
+           Q 123 120 116 118 
+           Q 109 115 104 110 
+           Q 99 105 96 95 
+           Q 93 85 92 75 
+           Q 91 65 96 60 
+           Q 101 55 110 60 
+           Q 115 58 125 58 
+           Q 135 58 140 60 
            Z" 
-        fill="#2d5016" opacity="0.9"/>
+        fill="url(#headGradient)"/>
   
-  <!-- Branches formant la nuque (côté gauche) -->
-  <path d="M 58 30 
-           Q 52 28 48 32 
-           Q 46 36 47 40 
-           Q 48 44 50 48 
-           Q 52 52 54 55 
-           Q 56 58 58 60 
-           Q 60 62 64 62 
-           Q 68 62 70 60 
-           Q 72 58 74 55 
-           Q 76 52 78 48 
-           Q 80 44 81 40 
-           Q 82 36 80 32 
-           Q 78 28 70 30 
+  <!-- Nuque et dos de la tête (côté gauche) -->
+  <path d="M 110 60 
+           Q 100 55 90 65 
+           Q 85 75 86 85 
+           Q 87 95 90 105 
+           Q 93 115 98 120 
+           Q 103 125 110 128 
+           Q 117 130 128 130 
+           Q 139 130 146 128 
+           Q 153 125 158 120 
+           Q 163 115 166 105 
+           Q 169 95 170 85 
+           Q 171 75 166 65 
+           Q 161 55 150 60 
+           Q 140 58 128 58 
+           Q 118 58 110 60 
            Z" 
-        fill="#1a3d0d" opacity="0.8"/>
+        fill="#1a3d0d" opacity="0.9"/>
   
-  <!-- Détails des branches (texture) -->
-  <circle cx="76" cy="35" r="1.5" fill="#1a3d0d" opacity="0.6"/>
-  <circle cx="74" cy="40" r="1" fill="#1a3d0d" opacity="0.6"/>
-  <circle cx="52" cy="35" r="1.5" fill="#1a3d0d" opacity="0.6"/>
-  <circle cx="54" cy="40" r="1" fill="#1a3d0d" opacity="0.6"/>
+  <!-- Détails des branches formant les traits du visage -->
+  <!-- Nez -->
+  <path d="M 160 75 Q 162 80 160 85 Q 158 80 160 75" 
+        fill="#1a3d0d" opacity="0.7"/>
+  <!-- Bouche -->
+  <path d="M 152 100 Q 155 102 158 100" 
+        stroke="#1a3d0d" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+  <!-- Menton -->
+  <path d="M 140 115 Q 135 118 130 115" 
+        stroke="#1a3d0d" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
   
-  <!-- Branches principales du tronc -->
-  <path d="M 64 70 L 50 60" stroke="#2d5016" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
-  <path d="M 64 70 L 78 60" stroke="#2d5016" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
-  <path d="M 64 65 L 48 55" stroke="#2d5016" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
-  <path d="M 64 65 L 80 55" stroke="#2d5016" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+  <!-- Texture des branches (petits cercles pour simuler les branches) -->
+  <circle cx="165" cy="70" r="2" fill="#1a3d0d" opacity="0.5"/>
+  <circle cx="162" cy="80" r="1.5" fill="#1a3d0d" opacity="0.5"/>
+  <circle cx="158" cy="90" r="1.5" fill="#1a3d0d" opacity="0.5"/>
+  <circle cx="91" cy="70" r="2" fill="#1a3d0d" opacity="0.5"/>
+  <circle cx="94" cy="80" r="1.5" fill="#1a3d0d" opacity="0.5"/>
+  <circle cx="98" cy="90" r="1.5" fill="#1a3d0d" opacity="0.5"/>
+  
+  <!-- Branches principales partant du tronc -->
+  <path d="M 128 140 L 100 125" stroke="#2d5016" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+  <path d="M 128 140 L 156 125" stroke="#2d5016" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+  <path d="M 128 135 L 95 120" stroke="#2d5016" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+  <path d="M 128 135 L 161 120" stroke="#2d5016" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+  <path d="M 128 130 L 90 115" stroke="#2d5016" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+  <path d="M 128 130 L 166 115" stroke="#2d5016" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+  
+  <!-- Branches secondaires pour plus de réalisme -->
+  <path d="M 100 125 L 85 110" stroke="#2d5016" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+  <path d="M 156 125 L 171 110" stroke="#2d5016" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+  <path d="M 95 120 L 80 105" stroke="#2d5016" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+  <path d="M 161 120 L 176 105" stroke="#2d5016" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
 </svg>
 
