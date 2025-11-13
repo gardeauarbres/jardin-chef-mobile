@@ -65,7 +65,6 @@ export const DateFilter = ({
             setOpen(false);
           }}
           initialFocus
-          locale={fr}
         />
       </PopoverContent>
     </Popover>
@@ -135,7 +134,6 @@ export const DateRangeFilter = ({
               selected={startDate || undefined}
               onSelect={(date) => onDateRangeChange(date || null, endDate)}
               initialFocus
-              locale={fr}
             />
           </div>
           <div>
@@ -145,7 +143,6 @@ export const DateRangeFilter = ({
               selected={endDate || undefined}
               onSelect={(date) => onDateRangeChange(startDate, date || null)}
               initialFocus
-              locale={fr}
             />
           </div>
           {(startDate || endDate) && (
