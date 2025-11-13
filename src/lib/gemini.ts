@@ -59,8 +59,13 @@ const model = getAvailableModel();
 /**
  * Génère une description détaillée pour un devis de paysagiste
  */
-// Fonction helper pour essayer plusieurs modèles en cas d'échec
-async function tryWithMultipleModels(prompt: string): Promise<string> {
+// Fonction helper pour attendre un délai (pour éviter les erreurs 429)
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Fonction helper pour essayer plusieurs modèles en cas d'échec avec retry et backoff
+async function tryWithMultipleModels(prompt: string, retries: number = 3): Promise<string> {
   if (!genAI) {
     throw new Error('Gemini API n\'est pas configurée. Vérifiez VITE_GEMINI_API_KEY.');
   }
@@ -68,24 +73,54 @@ async function tryWithMultipleModels(prompt: string): Promise<string> {
   let lastError: any = null;
   
   for (const modelName of MODEL_NAMES) {
-    try {
-      const currentModel = genAI.getGenerativeModel({ model: modelName });
-      const result = await currentModel.generateContent(prompt);
-      const response = await result.response;
-      return response.text().trim();
-    } catch (error: any) {
-      lastError = error;
-      // Si c'est une erreur 404 (modèle non trouvé), essayer le suivant
-      if (error?.message?.includes('404') || error?.message?.includes('not found')) {
-        console.warn(`[Gemini] Modèle ${modelName} non disponible, essai du suivant...`);
-        continue;
+    // Essayer avec retry pour ce modèle
+    for (let attempt = 0; attempt < retries; attempt++) {
+      try {
+        // Ajouter un petit délai entre les tentatives pour éviter les erreurs 429
+        if (attempt > 0) {
+          const backoffDelay = Math.min(1000 * Math.pow(2, attempt - 1), 10000); // Max 10 secondes
+          console.log(`[Gemini] Retry ${attempt}/${retries} après ${backoffDelay}ms...`);
+          await delay(backoffDelay);
+        }
+        
+        const currentModel = genAI.getGenerativeModel({ model: modelName });
+        const result = await currentModel.generateContent(prompt);
+        const response = await result.response;
+        return response.text().trim();
+      } catch (error: any) {
+        lastError = error;
+        const errorMessage = error?.message || '';
+        
+        // Si c'est une erreur 404 (modèle non trouvé), essayer le modèle suivant
+        if (errorMessage.includes('404') || errorMessage.includes('not found')) {
+          console.warn(`[Gemini] Modèle ${modelName} non disponible, essai du suivant...`);
+          break; // Sortir de la boucle de retry pour ce modèle
+        }
+        
+        // Si c'est une erreur 429 (quota dépassé), attendre et réessayer
+        if (errorMessage.includes('429') || errorMessage.includes('Resource exhausted')) {
+          if (attempt < retries - 1) {
+            const backoffDelay = Math.min(2000 * Math.pow(2, attempt), 30000); // Max 30 secondes pour 429
+            console.warn(`[Gemini] Quota dépassé (429), attente de ${backoffDelay}ms avant retry...`);
+            await delay(backoffDelay);
+            continue; // Réessayer avec ce modèle
+          } else {
+            // Si toutes les tentatives ont échoué avec 429, essayer le modèle suivant
+            console.warn(`[Gemini] Modèle ${modelName} toujours en erreur 429, essai du suivant...`);
+            break;
+          }
+        }
+        
+        // Pour les autres erreurs, relancer immédiatement
+        throw error;
       }
-      // Pour les autres erreurs, relancer
-      throw error;
     }
   }
   
   // Si tous les modèles ont échoué
+  if (lastError?.message?.includes('429')) {
+    throw new Error('Quota API Gemini dépassé. Veuillez attendre quelques minutes avant de réessayer.');
+  }
   throw new Error(`Aucun modèle Gemini disponible. Dernière erreur: ${lastError?.message || 'Inconnue'}`);
 }
 
