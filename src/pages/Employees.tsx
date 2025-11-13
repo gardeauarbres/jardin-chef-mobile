@@ -1,11 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Plus, Euro, Clock, TrendingUp, Trash2 } from 'lucide-react';
-import { getEmployees, saveEmployee, getTimesheets, saveTimesheet, deleteEmployee, deleteTimesheet } from '@/lib/storage';
-import { Employee, Timesheet } from '@/types';
 import MobileNav from '@/components/MobileNav';
 import { toast } from 'sonner';
 import {
@@ -18,10 +16,33 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
+
+interface Employee {
+  id: string;
+  first_name: string;
+  last_name: string;
+  hourly_rate: number;
+  created_at: string;
+}
+
+interface Timesheet {
+  id: string;
+  employee_id: string;
+  date: string;
+  hours: number;
+  status: string;
+  paid_date: string | null;
+  created_at: string;
+}
 
 const Employees = () => {
-  const [employees, setEmployees] = useState<Employee[]>(getEmployees());
-  const [timesheets, setTimesheets] = useState<Timesheet[]>(getTimesheets());
+  const navigate = useNavigate();
+  const { user, loading } = useAuth();
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [timesheets, setTimesheets] = useState<Timesheet[]>([]);
   const [showAddEmployee, setShowAddEmployee] = useState(false);
   const [showAddTimesheet, setShowAddTimesheet] = useState(false);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
@@ -40,19 +61,63 @@ const Employees = () => {
     hours: '',
   });
 
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate("/auth");
+    }
+  }, [user, loading, navigate]);
+
+  useEffect(() => {
+    if (!user) return;
+    fetchEmployees();
+    fetchTimesheets();
+  }, [user]);
+
+  const fetchEmployees = async () => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('employees')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      toast.error("Erreur lors du chargement des employés");
+    } else {
+      setEmployees(data || []);
+    }
+  };
+
+  const fetchTimesheets = async () => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('timesheets')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('date', { ascending: false });
+
+    if (error) {
+      toast.error("Erreur lors du chargement des heures");
+    } else {
+      setTimesheets(data || []);
+    }
+  };
+
   const stats = useMemo(() => {
     const totalDue = timesheets
       .filter(t => t.status === 'due')
       .reduce((sum, t) => {
-        const employee = employees.find(e => e.id === t.employeeId);
-        return sum + (employee ? t.hours * employee.hourlyRate : 0);
+        const employee = employees.find(e => e.id === t.employee_id);
+        return sum + (employee ? t.hours * employee.hourly_rate : 0);
       }, 0);
 
     const totalPaid = timesheets
       .filter(t => t.status === 'paid')
       .reduce((sum, t) => {
-        const employee = employees.find(e => e.id === t.employeeId);
-        return sum + (employee ? t.hours * employee.hourlyRate : 0);
+        const employee = employees.find(e => e.id === t.employee_id);
+        return sum + (employee ? t.hours * employee.hourly_rate : 0);
       }, 0);
 
     const totalHours = timesheets.reduce((sum, t) => sum + t.hours, 0);
@@ -60,56 +125,71 @@ const Employees = () => {
     return { totalDue, totalPaid, totalHours };
   }, [employees, timesheets]);
 
-  const handleAddEmployee = () => {
-    if (!newEmployee.firstName || !newEmployee.lastName || !newEmployee.hourlyRate) {
+  const handleAddEmployee = async () => {
+    if (!user || !newEmployee.firstName || !newEmployee.lastName || !newEmployee.hourlyRate) {
       toast.error('Veuillez remplir tous les champs');
       return;
     }
 
-    const employee: Employee = {
-      id: Date.now().toString(),
-      firstName: newEmployee.firstName,
-      lastName: newEmployee.lastName,
-      hourlyRate: parseFloat(newEmployee.hourlyRate),
-      createdAt: new Date().toISOString(),
-    };
+    const { error } = await supabase
+      .from('employees')
+      .insert({
+        user_id: user.id,
+        first_name: newEmployee.firstName,
+        last_name: newEmployee.lastName,
+        hourly_rate: parseFloat(newEmployee.hourlyRate),
+      });
 
-    saveEmployee(employee);
-    setEmployees(getEmployees());
-    setNewEmployee({ firstName: '', lastName: '', hourlyRate: '' });
-    setShowAddEmployee(false);
-    toast.success('Employé ajouté');
+    if (error) {
+      toast.error("Erreur lors de l'ajout de l'employé");
+    } else {
+      toast.success('Employé ajouté');
+      setNewEmployee({ firstName: '', lastName: '', hourlyRate: '' });
+      setShowAddEmployee(false);
+      fetchEmployees();
+    }
   };
 
-  const handleAddTimesheet = () => {
-    if (!newTimesheet.employeeId || !newTimesheet.date || !newTimesheet.hours) {
+  const handleAddTimesheet = async () => {
+    if (!user || !newTimesheet.employeeId || !newTimesheet.date || !newTimesheet.hours) {
       toast.error('Veuillez remplir tous les champs');
       return;
     }
 
-    const timesheet: Timesheet = {
-      id: Date.now().toString(),
-      employeeId: newTimesheet.employeeId,
-      date: newTimesheet.date,
-      hours: parseFloat(newTimesheet.hours),
-      status: 'due',
-      createdAt: new Date().toISOString(),
-    };
+    const { error } = await supabase
+      .from('timesheets')
+      .insert({
+        user_id: user.id,
+        employee_id: newTimesheet.employeeId,
+        date: newTimesheet.date,
+        hours: parseFloat(newTimesheet.hours),
+        status: 'due',
+      });
 
-    saveTimesheet(timesheet);
-    setTimesheets(getTimesheets());
-    setNewTimesheet({ employeeId: '', date: new Date().toISOString().split('T')[0], hours: '' });
-    setShowAddTimesheet(false);
-    toast.success('Heures enregistrées');
+    if (error) {
+      toast.error("Erreur lors de l'enregistrement des heures");
+    } else {
+      toast.success('Heures enregistrées');
+      setNewTimesheet({ employeeId: '', date: new Date().toISOString().split('T')[0], hours: '' });
+      setShowAddTimesheet(false);
+      fetchTimesheets();
+    }
   };
 
-  const handleMarkAsPaid = (timesheetId: string) => {
-    const timesheet = timesheets.find(t => t.id === timesheetId);
-    if (timesheet) {
-      const updated = { ...timesheet, status: 'paid' as const, paidDate: new Date().toISOString() };
-      saveTimesheet(updated);
-      setTimesheets(getTimesheets());
+  const handleMarkAsPaid = async (timesheetId: string) => {
+    const { error } = await supabase
+      .from('timesheets')
+      .update({
+        status: 'paid',
+        paid_date: new Date().toISOString(),
+      })
+      .eq('id', timesheetId);
+
+    if (error) {
+      toast.error("Erreur lors de la mise à jour");
+    } else {
       toast.success('Marqué comme payé');
+      fetchTimesheets();
     }
   };
 
@@ -119,23 +199,35 @@ const Employees = () => {
     setDeleteDialogOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
-    if (employeeToDelete) {
-      // Delete all timesheets for this employee
-      const empTimesheets = timesheets.filter(t => t.employeeId === employeeToDelete);
-      empTimesheets.forEach(t => deleteTimesheet(t.id));
-      
-      deleteEmployee(employeeToDelete);
-      setEmployees(getEmployees());
-      setTimesheets(getTimesheets());
-      toast.success('Employé supprimé');
-      setDeleteDialogOpen(false);
-      setEmployeeToDelete(null);
+  const handleDeleteConfirm = async () => {
+    if (!employeeToDelete) return;
+
+    // Delete all timesheets for this employee first
+    const empTimesheets = timesheets.filter(t => t.employee_id === employeeToDelete);
+    for (const ts of empTimesheets) {
+      await supabase.from('timesheets').delete().eq('id', ts.id);
     }
+
+    // Then delete the employee
+    const { error } = await supabase
+      .from('employees')
+      .delete()
+      .eq('id', employeeToDelete);
+
+    if (error) {
+      toast.error("Erreur lors de la suppression");
+    } else {
+      toast.success('Employé supprimé');
+      fetchEmployees();
+      fetchTimesheets();
+    }
+
+    setDeleteDialogOpen(false);
+    setEmployeeToDelete(null);
   };
 
   const getEmployeeTimesheets = (employeeId: string) => {
-    return timesheets.filter(t => t.employeeId === employeeId);
+    return timesheets.filter(t => t.employee_id === employeeId);
   };
 
   const getEmployeeStats = (employeeId: string) => {
@@ -146,13 +238,21 @@ const Employees = () => {
     const totalHours = empTimesheets.reduce((sum, t) => sum + t.hours, 0);
     const totalDue = empTimesheets
       .filter(t => t.status === 'due')
-      .reduce((sum, t) => sum + t.hours * employee.hourlyRate, 0);
+      .reduce((sum, t) => sum + t.hours * employee.hourly_rate, 0);
     const totalPaid = empTimesheets
       .filter(t => t.status === 'paid')
-      .reduce((sum, t) => sum + t.hours * employee.hourlyRate, 0);
+      .reduce((sum, t) => sum + t.hours * employee.hourly_rate, 0);
 
     return { totalHours, totalDue, totalPaid };
   };
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Chargement...</div>;
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -269,7 +369,7 @@ const Employees = () => {
                   <option value="">Sélectionner un employé</option>
                   {employees.map((emp) => (
                     <option key={emp.id} value={emp.id}>
-                      {emp.firstName} {emp.lastName}
+                      {emp.first_name} {emp.last_name}
                     </option>
                   ))}
                 </select>
@@ -317,9 +417,9 @@ const Employees = () => {
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <CardTitle className="text-base">
-                        {employee.firstName} {employee.lastName}
+                        {employee.first_name} {employee.last_name}
                       </CardTitle>
-                      <p className="text-sm text-muted-foreground">{employee.hourlyRate}€/h</p>
+                      <p className="text-sm text-muted-foreground">{employee.hourly_rate}€/h</p>
                     </div>
                     <div className="flex items-start gap-3">
                       <div className="text-right">
@@ -353,7 +453,7 @@ const Employees = () => {
                               {new Date(ts.date).toLocaleDateString('fr-FR')}
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              {ts.hours}h × {employee.hourlyRate}€ = {(ts.hours * employee.hourlyRate).toFixed(2)}€
+                              {ts.hours}h × {employee.hourly_rate}€ = {(ts.hours * employee.hourly_rate).toFixed(2)}€
                             </div>
                           </div>
                           {ts.status === 'due' ? (

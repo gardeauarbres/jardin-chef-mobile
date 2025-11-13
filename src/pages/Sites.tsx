@@ -1,10 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Trash2 } from 'lucide-react';
-import { getSites, getClients, deleteSite } from '@/lib/storage';
 import MobileNav from '@/components/MobileNav';
 import {
   AlertDialog,
@@ -17,16 +16,71 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
+
+interface Site {
+  id: string;
+  title: string;
+  description: string;
+  status: string;
+  start_date: string;
+  end_date: string | null;
+  total_amount: number;
+  paid_amount: number;
+  client_id: string;
+  clients?: {
+    first_name: string;
+    last_name: string;
+  };
+}
 
 const Sites = () => {
-  const [sites, setSites] = useState(getSites());
-  const [clients] = useState(getClients());
+  const navigate = useNavigate();
+  const { user, loading } = useAuth();
+  const [sites, setSites] = useState<Site[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [siteToDelete, setSiteToDelete] = useState<string | null>(null);
 
-  const getClientName = (clientId: string) => {
-    const client = clients.find(c => c.id === clientId);
-    return client ? `${client.firstName} ${client.lastName}` : 'Client inconnu';
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate("/auth");
+    }
+  }, [user, loading, navigate]);
+
+  useEffect(() => {
+    if (!user) return;
+    fetchSites();
+  }, [user]);
+
+  const fetchSites = async () => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('sites')
+      .select(`
+        *,
+        clients (
+          first_name,
+          last_name
+        )
+      `)
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      toast.error("Erreur lors du chargement des chantiers");
+    } else {
+      setSites(data || []);
+    }
+  };
+
+  const getClientName = (site: Site) => {
+    if (site.clients) {
+      return `${site.clients.first_name} ${site.clients.last_name}`;
+    }
+    return 'Client inconnu';
   };
 
   const getStatusBadge = (status: string) => {
@@ -49,15 +103,32 @@ const Sites = () => {
     setDeleteDialogOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
-    if (siteToDelete) {
-      deleteSite(siteToDelete);
-      setSites(getSites());
+  const handleDeleteConfirm = async () => {
+    if (!siteToDelete) return;
+
+    const { error } = await supabase
+      .from('sites')
+      .delete()
+      .eq('id', siteToDelete);
+
+    if (error) {
+      toast.error("Erreur lors de la suppression");
+    } else {
       toast.success('Chantier supprimé');
-      setDeleteDialogOpen(false);
-      setSiteToDelete(null);
+      fetchSites();
     }
+
+    setDeleteDialogOpen(false);
+    setSiteToDelete(null);
   };
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Chargement...</div>;
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -78,8 +149,8 @@ const Sites = () => {
           </Card>
         ) : (
           sites.map((site) => {
-            const progress = calculateProgress(site.paidAmount, site.totalAmount);
-            const remainingAmount = site.totalAmount - site.paidAmount;
+            const progress = calculateProgress(site.paid_amount, site.total_amount);
+            const remainingAmount = site.total_amount - site.paid_amount;
 
             return (
               <Card key={site.id} className="group cursor-pointer hover:shadow-glow hover:scale-[1.02] transition-all duration-200 animate-fade-in">
@@ -87,7 +158,7 @@ const Sites = () => {
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
                       <h3 className="font-semibold">{site.title}</h3>
-                      <p className="text-sm text-muted-foreground">{getClientName(site.clientId)}</p>
+                      <p className="text-sm text-muted-foreground">{getClientName(site)}</p>
                     </div>
                     <div className="flex items-start gap-2">
                       {getStatusBadge(site.status)}
@@ -106,7 +177,7 @@ const Sites = () => {
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Paiement</span>
                       <span className="font-medium">
-                        {site.paidAmount.toFixed(0)}€ / {site.totalAmount.toFixed(0)}€
+                        {site.paid_amount.toFixed(0)}€ / {site.total_amount.toFixed(0)}€
                       </span>
                     </div>
                     <Progress value={progress} className="h-2" />
@@ -117,9 +188,9 @@ const Sites = () => {
                   </div>
 
                   <div className="mt-3 pt-3 border-t flex justify-between text-xs text-muted-foreground">
-                    <span>Début: {new Date(site.startDate).toLocaleDateString('fr-FR')}</span>
-                    {site.endDate && (
-                      <span>Fin: {new Date(site.endDate).toLocaleDateString('fr-FR')}</span>
+                    <span>Début: {new Date(site.start_date).toLocaleDateString('fr-FR')}</span>
+                    {site.end_date && (
+                      <span>Fin: {new Date(site.end_date).toLocaleDateString('fr-FR')}</span>
                     )}
                   </div>
                 </CardContent>

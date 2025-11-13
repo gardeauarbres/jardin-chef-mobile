@@ -1,8 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { getPayments, getClients, getSites, deletePayment } from '@/lib/storage';
 import MobileNav from '@/components/MobileNav';
 import { Euro, Calendar, Trash2 } from 'lucide-react';
 import {
@@ -16,22 +15,81 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
+
+interface Payment {
+  id: string;
+  site_id: string;
+  client_id: string;
+  amount: number;
+  type: string;
+  status: string;
+  due_date: string | null;
+  paid_date: string | null;
+  created_at: string;
+  sites?: {
+    title: string;
+  };
+  clients?: {
+    first_name: string;
+    last_name: string;
+  };
+}
 
 const Payments = () => {
-  const [payments, setPayments] = useState(getPayments());
-  const clients = useMemo(() => getClients(), []);
-  const sites = useMemo(() => getSites(), []);
+  const navigate = useNavigate();
+  const { user, loading } = useAuth();
+  const [payments, setPayments] = useState<Payment[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [paymentToDelete, setPaymentToDelete] = useState<string | null>(null);
 
-  const getClientName = (clientId: string) => {
-    const client = clients.find(c => c.id === clientId);
-    return client ? `${client.firstName} ${client.lastName}` : 'Client inconnu';
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate("/auth");
+    }
+  }, [user, loading, navigate]);
+
+  useEffect(() => {
+    if (!user) return;
+    fetchPayments();
+  }, [user]);
+
+  const fetchPayments = async () => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('payments')
+      .select(`
+        *,
+        sites (
+          title
+        ),
+        clients (
+          first_name,
+          last_name
+        )
+      `)
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      toast.error("Erreur lors du chargement des paiements");
+    } else {
+      setPayments(data || []);
+    }
   };
 
-  const getSiteName = (siteId: string) => {
-    const site = sites.find(s => s.id === siteId);
-    return site?.title || 'Chantier inconnu';
+  const getClientName = (payment: Payment) => {
+    if (payment.clients) {
+      return `${payment.clients.first_name} ${payment.clients.last_name}`;
+    }
+    return 'Client inconnu';
+  };
+
+  const getSiteName = (payment: Payment) => {
+    return payment.sites?.title || 'Chantier inconnu';
   };
 
   const getTypeBadge = (type: string) => {
@@ -58,8 +116,8 @@ const Payments = () => {
         return a.status === 'pending' ? -1 : 1;
       }
       // Then by due date or creation date
-      const dateA = a.dueDate || a.createdAt;
-      const dateB = b.dueDate || b.createdAt;
+      const dateA = a.due_date || a.created_at;
+      const dateB = b.due_date || b.created_at;
       return new Date(dateA).getTime() - new Date(dateB).getTime();
     });
   }, [payments]);
@@ -76,15 +134,32 @@ const Payments = () => {
     setDeleteDialogOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
-    if (paymentToDelete) {
-      deletePayment(paymentToDelete);
-      setPayments(getPayments());
+  const handleDeleteConfirm = async () => {
+    if (!paymentToDelete) return;
+
+    const { error } = await supabase
+      .from('payments')
+      .delete()
+      .eq('id', paymentToDelete);
+
+    if (error) {
+      toast.error("Erreur lors de la suppression");
+    } else {
       toast.success('Paiement supprimé');
-      setDeleteDialogOpen(false);
-      setPaymentToDelete(null);
+      fetchPayments();
     }
+
+    setDeleteDialogOpen(false);
+    setPaymentToDelete(null);
   };
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Chargement...</div>;
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -118,13 +193,13 @@ const Payments = () => {
           </Card>
         ) : (
           sortedPayments.map((payment) => (
-            <Card key={payment.id} className="group cursor-pointer hover:shadow-glow hover:scale-[1.02] transition-all duration-200 animate-fade-in">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex-1">
-                    <h3 className="font-semibold">{getSiteName(payment.siteId)}</h3>
-                    <p className="text-sm text-muted-foreground">{getClientName(payment.clientId)}</p>
-                  </div>
+              <Card key={payment.id} className="group cursor-pointer hover:shadow-glow hover:scale-[1.02] transition-all duration-200 animate-fade-in">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1">
+                      <h3 className="font-semibold">{getSiteName(payment)}</h3>
+                      <p className="text-sm text-muted-foreground">{getClientName(payment)}</p>
+                    </div>
                   <div className="flex items-start gap-2">
                     <div className="text-right space-y-1">
                       {getTypeBadge(payment.type)}
@@ -144,12 +219,12 @@ const Payments = () => {
                 <div className="flex justify-between items-end mt-3">
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Calendar className="h-3 w-3" />
-                    {payment.status === 'paid' && payment.paidDate ? (
-                      <span>Payé le {new Date(payment.paidDate).toLocaleDateString('fr-FR')}</span>
-                    ) : payment.dueDate ? (
-                      <span>Échéance: {new Date(payment.dueDate).toLocaleDateString('fr-FR')}</span>
+                    {payment.status === 'paid' && payment.paid_date ? (
+                      <span>Payé le {new Date(payment.paid_date).toLocaleDateString('fr-FR')}</span>
+                    ) : payment.due_date ? (
+                      <span>Échéance: {new Date(payment.due_date).toLocaleDateString('fr-FR')}</span>
                     ) : (
-                      <span>{new Date(payment.createdAt).toLocaleDateString('fr-FR')}</span>
+                      <span>{new Date(payment.created_at).toLocaleDateString('fr-FR')}</span>
                     )}
                   </div>
                   <p className="text-lg font-bold text-primary">{payment.amount.toFixed(2)}€</p>

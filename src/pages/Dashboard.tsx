@@ -28,16 +28,21 @@ const Dashboard = () => {
     if (!user) return;
 
     const fetchData = async () => {
-      const [clientsRes, quotesRes, profileRes] = await Promise.all([
+      const [clientsRes, quotesRes, sitesRes, paymentsRes, profileRes] = await Promise.all([
         supabase.from('clients').select('*').eq('user_id', user.id),
         supabase.from('quotes').select('*').eq('user_id', user.id),
+        supabase.from('sites').select('*').eq('user_id', user.id),
+        supabase.from('payments').select('*').eq('user_id', user.id),
         supabase.from('profiles').select('first_name, last_name').eq('id', user.id).single(),
       ]);
 
+      const activeSites = sitesRes.data?.filter(s => s.status === 'active').length || 0;
+      const pendingPayments = paymentsRes.data?.filter(p => p.status === 'pending').reduce((sum, p) => sum + p.amount, 0) || 0;
+
       setStats({
         totalClients: clientsRes.data?.length || 0,
-        activeSites: 0,
-        totalPending: 0,
+        activeSites,
+        totalPending: pendingPayments,
         acceptedQuotes: quotesRes.data?.filter(q => q.status === 'accepted').length || 0,
       });
 

@@ -115,6 +115,188 @@ export type Database = {
           },
         ]
       }
+      sites: {
+        Row: {
+          id: string
+          user_id: string
+          client_id: string
+          quote_id: string
+          title: string
+          description: string
+          status: string
+          start_date: string
+          end_date: string | null
+          total_amount: number
+          paid_amount: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          client_id: string
+          quote_id: string
+          title: string
+          description: string
+          status: string
+          start_date: string
+          end_date?: string | null
+          total_amount: number
+          paid_amount?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          client_id?: string
+          quote_id?: string
+          title?: string
+          description?: string
+          status?: string
+          start_date?: string
+          end_date?: string | null
+          total_amount?: number
+          paid_amount?: number
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sites_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sites_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employees: {
+        Row: {
+          id: string
+          user_id: string
+          first_name: string
+          last_name: string
+          hourly_rate: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          first_name: string
+          last_name: string
+          hourly_rate: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          first_name?: string
+          last_name?: string
+          hourly_rate?: number
+          created_at?: string
+        }
+        Relationships: []
+      }
+      timesheets: {
+        Row: {
+          id: string
+          user_id: string
+          employee_id: string
+          date: string
+          hours: number
+          status: string
+          paid_date: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          employee_id: string
+          date: string
+          hours: number
+          status: string
+          paid_date?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          employee_id?: string
+          date?: string
+          hours?: number
+          status?: string
+          paid_date?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timesheets_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          id: string
+          user_id: string
+          site_id: string
+          client_id: string
+          amount: number
+          type: string
+          status: string
+          due_date: string | null
+          paid_date: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          site_id: string
+          client_id: string
+          amount: number
+          type: string
+          status: string
+          due_date?: string | null
+          paid_date?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          site_id?: string
+          client_id?: string
+          amount?: number
+          type?: string
+          status?: string
+          due_date?: string | null
+          paid_date?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
