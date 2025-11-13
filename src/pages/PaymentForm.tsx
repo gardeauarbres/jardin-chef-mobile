@@ -263,15 +263,15 @@ const PaymentForm = () => {
                         value={field.value}
                       >
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="text-base">
                             <SelectValue placeholder="Sélectionner un chantier" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
+                        <SelectContent className="max-h-[60vh]">
                           {sites.map((site) => {
                             const remaining = site.total_amount - site.paid_amount;
                             return (
-                              <SelectItem key={site.id} value={site.id}>
+                              <SelectItem key={site.id} value={site.id} className="text-base py-3">
                                 {site.title} - Reste: {remaining.toFixed(2)}€
                               </SelectItem>
                             );
@@ -294,13 +294,13 @@ const PaymentForm = () => {
                       <FormLabel>Client</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="text-base">
                             <SelectValue placeholder="Sélectionner un client" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
+                        <SelectContent className="max-h-[60vh]">
                           {clients.map((client) => (
-                            <SelectItem key={client.id} value={client.id}>
+                            <SelectItem key={client.id} value={client.id} className="text-base py-3">
                               {client.first_name} {client.last_name}
                             </SelectItem>
                           ))}
@@ -318,7 +318,7 @@ const PaymentForm = () => {
                     <FormItem>
                       <FormLabel>Montant (€)</FormLabel>
                       <FormControl>
-                        <Input type="text" placeholder="1000.00" {...field} />
+                        <Input type="number" inputMode="decimal" step="0.01" placeholder="1000.00" className="text-base" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -331,18 +331,18 @@ const PaymentForm = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Type de paiement</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="deposit">Acompte</SelectItem>
-                          <SelectItem value="progress">Avancement</SelectItem>
-                          <SelectItem value="final">Solde</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="text-base">
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="deposit" className="text-base py-3">Acompte</SelectItem>
+                            <SelectItem value="progress" className="text-base py-3">Avancement</SelectItem>
+                            <SelectItem value="final" className="text-base py-3">Solde</SelectItem>
+                          </SelectContent>
+                        </Select>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -354,17 +354,17 @@ const PaymentForm = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Statut</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="pending">En attente</SelectItem>
-                          <SelectItem value="paid">Payé</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="text-base">
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="pending" className="text-base py-3">En attente</SelectItem>
+                            <SelectItem value="paid" className="text-base py-3">Payé</SelectItem>
+                          </SelectContent>
+                        </Select>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -378,7 +378,7 @@ const PaymentForm = () => {
                       <FormItem>
                         <FormLabel>Date d'échéance (optionnel)</FormLabel>
                         <FormControl>
-                          <Input type="date" {...field} />
+                          <Input type="date" className="text-base" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -404,7 +404,7 @@ const PaymentForm = () => {
                   />
                 </div>
 
-                <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                <Button type="submit" className="w-full min-h-[44px] text-base" disabled={form.formState.isSubmitting}>
                   {form.formState.isSubmitting ? "Chargement..." : id ? "Modifier" : "Créer"}
                 </Button>
               </form>

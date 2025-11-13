@@ -269,13 +269,13 @@ const SiteForm = () => {
                         value={field.value}
                       >
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="text-base">
                             <SelectValue placeholder="Sélectionner un devis accepté" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
+                        <SelectContent className="max-h-[60vh]">
                           {quotes.map((quote) => (
-                            <SelectItem key={quote.id} value={quote.id}>
+                            <SelectItem key={quote.id} value={quote.id} className="text-base py-3">
                               {quote.title} - {quote.amount.toFixed(2)}€
                             </SelectItem>
                           ))}
@@ -297,13 +297,13 @@ const SiteForm = () => {
                       <FormLabel>Client</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="text-base">
                             <SelectValue placeholder="Sélectionner un client" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
+                        <SelectContent className="max-h-[60vh]">
                           {clients.map((client) => (
-                            <SelectItem key={client.id} value={client.id}>
+                            <SelectItem key={client.id} value={client.id} className="text-base py-3">
                               {client.first_name} {client.last_name}
                             </SelectItem>
                           ))}
@@ -321,7 +321,7 @@ const SiteForm = () => {
                     <FormItem>
                       <FormLabel>Titre du chantier</FormLabel>
                       <FormControl>
-                        <Input placeholder="Rénovation jardin" {...field} />
+                        <Input placeholder="Rénovation jardin" className="text-base" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -337,7 +337,7 @@ const SiteForm = () => {
                       <FormControl>
                         <Textarea
                           placeholder="Détails des travaux..."
-                          className="min-h-[120px]"
+                          className="min-h-[120px] text-base"
                           {...field}
                         />
                       </FormControl>
@@ -354,7 +354,7 @@ const SiteForm = () => {
                       <FormItem>
                         <FormLabel>Date de début</FormLabel>
                         <FormControl>
-                          <Input type="date" {...field} />
+                          <Input type="date" className="text-base" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -368,7 +368,7 @@ const SiteForm = () => {
                       <FormItem>
                         <FormLabel>Date de fin (optionnel)</FormLabel>
                         <FormControl>
-                          <Input type="date" {...field} />
+                          <Input type="date" className="text-base" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -384,7 +384,7 @@ const SiteForm = () => {
                       <FormItem>
                         <FormLabel>Montant total (€)</FormLabel>
                         <FormControl>
-                          <Input type="text" placeholder="5000.00" {...field} />
+                          <Input type="number" inputMode="decimal" step="0.01" placeholder="5000.00" className="text-base" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -398,7 +398,7 @@ const SiteForm = () => {
                       <FormItem>
                         <FormLabel>Montant payé (€)</FormLabel>
                         <FormControl>
-                          <Input type="text" placeholder="0" {...field} />
+                          <Input type="number" inputMode="decimal" step="0.01" placeholder="0" className="text-base" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -412,24 +412,24 @@ const SiteForm = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Statut</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="active">En cours</SelectItem>
-                          <SelectItem value="completed">Terminé</SelectItem>
-                          <SelectItem value="paused">En pause</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="text-base">
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="active" className="text-base py-3">En cours</SelectItem>
+                            <SelectItem value="completed" className="text-base py-3">Terminé</SelectItem>
+                            <SelectItem value="paused" className="text-base py-3">En pause</SelectItem>
+                          </SelectContent>
+                        </Select>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                <Button type="submit" className="w-full min-h-[44px] text-base" disabled={form.formState.isSubmitting}>
                   {form.formState.isSubmitting ? "Chargement..." : id ? "Modifier" : "Créer"}
                 </Button>
               </form>

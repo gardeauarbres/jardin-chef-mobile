@@ -107,5 +107,48 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    /* Empêcher le zoom automatique sur iOS */
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Améliorer la compatibilité mobile pour les inputs */
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="date"],
+  textarea,
+  select {
+    font-size: 16px !important; /* Évite le zoom automatique sur iOS */
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  /* Améliorer les Select sur mobile */
+  [role="listbox"],
+  [role="option"] {
+    font-size: 16px !important;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Améliorer le Select sur mobile */
+  select {
+    background-image: none;
+  }
+
+  /* Améliorer le touch sur mobile */
+  button,
+  a,
+  [role="button"] {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Améliorer le scroll sur mobile */
+  * {
+    -webkit-overflow-scrolling: touch;
   }
 }

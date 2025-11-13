@@ -16,6 +16,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSupabaseMutation } from "@/hooks/useSupabaseQuery";
 import { exportQuoteToPDF } from "@/lib/pdfExport";
 import { useAutoSave } from "@/hooks/useAutoSave";
+import { AutoSaveIndicator } from "@/components/AutoSaveIndicator";
 import MobileNav from "@/components/MobileNav";
 
 interface Client {
@@ -308,13 +309,13 @@ const QuoteForm = () => {
                       <FormLabel>Client</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="text-base">
                             <SelectValue placeholder="Sélectionner un client" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
+                        <SelectContent className="max-h-[60vh]">
                           {clients.map((client) => (
-                            <SelectItem key={client.id} value={client.id}>
+                            <SelectItem key={client.id} value={client.id} className="text-base py-3">
                               {client.first_name} {client.last_name}
                             </SelectItem>
                           ))}
@@ -348,7 +349,7 @@ const QuoteForm = () => {
                       <FormControl>
                         <Textarea
                           placeholder="Détails des travaux à effectuer..."
-                          className="min-h-[120px]"
+                          className="min-h-[120px] text-base resize-y"
                           {...field}
                         />
                       </FormControl>
@@ -365,8 +366,11 @@ const QuoteForm = () => {
                       <FormLabel>Montant total (€)</FormLabel>
                       <FormControl>
                         <Input
-                          type="text"
+                          type="number"
+                          inputMode="decimal"
+                          step="0.01"
                           placeholder="5000.00"
+                          className="text-base"
                           {...field}
                         />
                       </FormControl>
@@ -393,8 +397,13 @@ const QuoteForm = () => {
                         <FormLabel>Acompte (%) - Optionnel</FormLabel>
                         <FormControl>
                           <Input
-                            type="text"
+                            type="number"
+                            inputMode="numeric"
+                            min="0"
+                            max="100"
+                            step="1"
                             placeholder="30"
+                            className="text-base"
                             {...field}
                           />
                         </FormControl>
@@ -431,15 +440,15 @@ const QuoteForm = () => {
                         <FormLabel>Statut</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
-                            <SelectTrigger>
+                            <SelectTrigger className="text-base">
                               <SelectValue />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="draft">Brouillon</SelectItem>
-                            <SelectItem value="sent">Envoyé</SelectItem>
-                            <SelectItem value="accepted">Accepté</SelectItem>
-                            <SelectItem value="rejected">Refusé</SelectItem>
+                            <SelectItem value="draft" className="text-base py-3">Brouillon</SelectItem>
+                            <SelectItem value="sent" className="text-base py-3">Envoyé</SelectItem>
+                            <SelectItem value="accepted" className="text-base py-3">Accepté</SelectItem>
+                            <SelectItem value="rejected" className="text-base py-3">Refusé</SelectItem>
                           </SelectContent>
                         </Select>
                         {willCreateSite && (
@@ -476,7 +485,7 @@ const QuoteForm = () => {
                       </CardContent>
                     </Card>
                   )}
-                  <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                  <Button type="submit" className="w-full min-h-[44px] text-base touch-manipulation" disabled={form.formState.isSubmitting}>
                     {form.formState.isSubmitting ? "Chargement..." : id ? "Modifier" : "Créer"}
                   </Button>
                 </div>
