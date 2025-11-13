@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, FileText, Hammer, Euro, TrendingUp, LogOut, Moon, Sun } from 'lucide-react';
+import { Users, FileText, Hammer, Euro, TrendingUp, LogOut, Moon, Sun, Calendar, Target, CheckCircle2 } from 'lucide-react';
+import { StatsCard } from '@/components/StatsCard';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -109,16 +110,52 @@ const Dashboard = () => {
 
   const computedStats = useMemo(() => {
     const activeSites = sites.filter((s: any) => s?.status === 'active').length;
+    const completedSites = sites.filter((s: any) => s?.status === 'completed').length;
     const pendingPayments = payments
       .filter((p: any) => p?.status === 'pending')
       .reduce((sum: number, p: any) => sum + (p?.amount || 0), 0);
+    const paidPayments = payments
+      .filter((p: any) => p?.status === 'paid')
+      .reduce((sum: number, p: any) => sum + (p?.amount || 0), 0);
     const acceptedQuotes = quotes.filter((q: any) => q?.status === 'accepted').length;
+    const totalQuotes = quotes.length;
+    const conversionRate = totalQuotes > 0 ? (acceptedQuotes / totalQuotes) * 100 : 0;
+    
+    // Revenus totaux (paiements payés + montants payés des chantiers)
+    const totalRevenue = paidPayments + sites.reduce((sum: number, s: any) => sum + (s?.paid_amount || 0), 0);
+    
+    // Montant total des devis acceptés
+    const acceptedQuotesAmount = quotes
+      .filter((q: any) => q?.status === 'accepted')
+      .reduce((sum: number, q: any) => sum + (q?.amount || 0), 0);
+    
+    // Statistiques du mois en cours
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthlyQuotes = quotes.filter((q: any) => {
+      const created = new Date(q.created_at);
+      return created >= startOfMonth;
+    }).length;
+    const monthlyRevenue = payments
+      .filter((p: any) => {
+        if (p.status !== 'paid' || !p.paid_date) return false;
+        const paid = new Date(p.paid_date);
+        return paid >= startOfMonth;
+      })
+      .reduce((sum: number, p: any) => sum + (p?.amount || 0), 0);
 
     return {
       totalClients: clients.length,
       activeSites,
+      completedSites,
       totalPending: pendingPayments,
+      totalRevenue,
       acceptedQuotes,
+      totalQuotes,
+      conversionRate,
+      acceptedQuotesAmount,
+      monthlyQuotes,
+      monthlyRevenue,
     };
   }, [clients, quotes, sites, payments]);
 
@@ -216,53 +253,60 @@ const Dashboard = () => {
 
       <div className="p-4 space-y-4">
         <div className="grid grid-cols-2 gap-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Users className="h-4 w-4 text-primary" />
-                Clients
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{computedStats.totalClients}</div>
-            </CardContent>
-          </Card>
+          <StatsCard
+            title="Clients"
+            value={computedStats.totalClients}
+            icon={Users}
+            iconColor="text-primary"
+            description="Total de vos clients"
+          />
+          <StatsCard
+            title="Chantiers actifs"
+            value={computedStats.activeSites}
+            icon={Hammer}
+            iconColor="text-success"
+            description={`${computedStats.completedSites} terminé${computedStats.completedSites > 1 ? 's' : ''}`}
+          />
+          <StatsCard
+            title="Devis acceptés"
+            value={computedStats.acceptedQuotes}
+            icon={CheckCircle2}
+            iconColor="text-success"
+            description={`${computedStats.conversionRate.toFixed(0)}% de conversion`}
+            trend={
+              computedStats.totalQuotes > 0
+                ? {
+                    value: computedStats.conversionRate,
+                    label: 'taux',
+                    isPositive: computedStats.conversionRate >= 30,
+                  }
+                : undefined
+            }
+          />
+          <StatsCard
+            title="À encaisser"
+            value={`${computedStats.totalPending.toFixed(0)}€`}
+            icon={Euro}
+            iconColor="text-warning"
+            description="Paiements en attente"
+          />
+        </div>
 
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Hammer className="h-4 w-4 text-success" />
-                Chantiers actifs
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{computedStats.activeSites}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <FileText className="h-4 w-4 text-accent" />
-                Devis acceptés
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{computedStats.acceptedQuotes}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Euro className="h-4 w-4 text-warning" />
-                À encaisser
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{computedStats.totalPending.toFixed(0)}€</div>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-2 gap-4">
+          <StatsCard
+            title="Revenus totaux"
+            value={`${computedStats.totalRevenue.toFixed(0)}€`}
+            icon={TrendingUp}
+            iconColor="text-success"
+            description={`${computedStats.monthlyRevenue.toFixed(0)}€ ce mois`}
+          />
+          <StatsCard
+            title="Devis ce mois"
+            value={computedStats.monthlyQuotes}
+            icon={Calendar}
+            iconColor="text-primary"
+            description={`${computedStats.totalQuotes} au total`}
+          />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
