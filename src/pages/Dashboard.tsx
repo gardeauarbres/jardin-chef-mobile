@@ -18,31 +18,34 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 const Dashboard = () => {
-  // Tous les hooks doivent être au début, dans le même ordre à chaque rendu
+  // ============================================
+  // TOUS LES HOOKS DOIVENT ÊTRE ICI, DANS LE MÊME ORDRE À CHAQUE RENDU
+  // ============================================
+  
+  // 1. Hooks de contexte/routing (toujours appelés)
   const { user, loading, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
+  
+  // 2. useState (toujours appelés)
   const [userName, setUserName] = useState<string>("");
-
-  // useEffect pour la redirection - TOUJOURS appelé en premier
+  
+  // 3. Hooks de données React Query (toujours appelés, même si user est null)
+  const clientsQuery = useClients();
+  const quotesQuery = useQuotes();
+  const sitesQuery = useSites();
+  const paymentsQuery = usePayments();
+  
+  // 4. useEffect (toujours appelés dans le même ordre)
   useEffect(() => {
     if (!loading && !user) {
       navigate("/auth");
     }
   }, [user, loading, navigate]);
 
-  // Utiliser les hooks optimisés avec cache - TOUJOURS appelés après les useEffect de base
-  // Ces hooks sont toujours appelés même si user est null (React Query gère enabled)
-  const clientsQuery = useClients();
-  const quotesQuery = useQuotes();
-  const sitesQuery = useSites();
-  const paymentsQuery = usePayments();
-
-  // useEffect pour récupérer le profil - TOUJOURS appelé après les hooks de données
   useEffect(() => {
     if (!user) return;
 
-    // Récupérer le profil utilisateur
     const fetchProfile = async () => {
       const { data } = await supabase
         .from('profiles')
