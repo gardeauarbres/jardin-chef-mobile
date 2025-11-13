@@ -31,27 +31,28 @@ const Dashboard = () => {
   });
 
   // Utiliser les hooks optimisés avec cache - TOUJOURS appelés, même si user est null
-  const { data: clients = [] } = useClients();
-  const { data: quotes = [] } = useQuotes();
-  const { data: sites = [] } = useSites();
-  const { data: payments = [] } = usePayments();
+  const clientsQuery = useClients();
+  const quotesQuery = useQuotes();
+  const sitesQuery = useSites();
+  const paymentsQuery = usePayments();
+
+  // Normaliser les données pour garantir qu'elles sont toujours des tableaux
+  const clients = Array.isArray(clientsQuery.data) ? clientsQuery.data : [];
+  const quotes = Array.isArray(quotesQuery.data) ? quotesQuery.data : [];
+  const sites = Array.isArray(sitesQuery.data) ? sitesQuery.data : [];
+  const payments = Array.isArray(paymentsQuery.data) ? paymentsQuery.data : [];
 
   // Calculer les stats avec useMemo - TOUJOURS appelé, jamais dans une condition
+  // Les dépendances sont maintenant toujours des tableaux, jamais undefined
   const computedStats = useMemo(() => {
-    // S'assurer que les données sont des tableaux avant de les utiliser
-    const safeSites = Array.isArray(sites) ? sites : [];
-    const safePayments = Array.isArray(payments) ? payments : [];
-    const safeQuotes = Array.isArray(quotes) ? quotes : [];
-    const safeClients = Array.isArray(clients) ? clients : [];
-
-    const activeSites = safeSites.filter((s: any) => s?.status === 'active').length;
-    const pendingPayments = safePayments
+    const activeSites = sites.filter((s: any) => s?.status === 'active').length;
+    const pendingPayments = payments
       .filter((p: any) => p?.status === 'pending')
       .reduce((sum: number, p: any) => sum + (p?.amount || 0), 0);
-    const acceptedQuotes = safeQuotes.filter((q: any) => q?.status === 'accepted').length;
+    const acceptedQuotes = quotes.filter((q: any) => q?.status === 'accepted').length;
 
     return {
-      totalClients: safeClients.length,
+      totalClients: clients.length,
       activeSites,
       totalPending: pendingPayments,
       acceptedQuotes,

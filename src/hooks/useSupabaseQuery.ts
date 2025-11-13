@@ -11,7 +11,19 @@ export function useSupabaseQuery<T>(
 ) {
   return useQuery({
     queryKey: key,
-    queryFn: queryFn,
+    queryFn: async () => {
+      try {
+        return await queryFn();
+      } catch (error: any) {
+        // Si c'est une erreur 404 ou table n'existe pas, retourner un tableau vide pour les tableaux
+        if (error?.code === 'PGRST116' || error?.status === 404 || error?.message?.includes('does not exist')) {
+          console.warn('Table does not exist or 404 error:', error);
+          // Retourner un tableau vide par défaut si T est un tableau
+          return [] as unknown as T;
+        }
+        throw error;
+      }
+    },
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 10, // 10 minutes
     retry: (failureCount, error: any) => {
