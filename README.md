@@ -127,7 +127,6 @@ Voir `OPTIMIZATIONS.md` pour plus de détails.
 - `SETUP.md` - Guide de configuration détaillé
 - `NEXT_STEPS.md` - Prochaines étapes après installation
 - `OPTIMIZATIONS.md` - Détails des optimisations
-- `LOVABLE_FILES.md` - Liste des fichiers liés à Lovable (nettoyés)
 
 ## 🤝 Contribution
 
