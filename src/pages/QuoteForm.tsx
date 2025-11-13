@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import { quoteSchema, QuoteFormData } from "@/lib/validations";
 import { useAuth } from "@/hooks/useAuth";
+import { useSupabaseMutation } from "@/hooks/useSupabaseQuery";
 
 interface Client {
   id: string;
@@ -26,6 +27,7 @@ const QuoteForm = () => {
   const { user, loading } = useAuth();
   const [clients, setClients] = useState<Client[]>([]);
   const [loadingClients, setLoadingClients] = useState(true);
+  const [previousStatus, setPreviousStatus] = useState<string>("");
 
   const form = useForm<QuoteFormData>({
     resolver: zodResolver(quoteSchema),
@@ -88,6 +90,7 @@ const QuoteForm = () => {
 
       if (data) {
         const status = data.status as "draft" | "sent" | "accepted" | "rejected";
+        setPreviousStatus(status || "draft");
         form.reset({
           title: data.title || "",
           description: data.description || "",
@@ -100,6 +103,46 @@ const QuoteForm = () => {
     } catch (error: any) {
       toast.error("Erreur lors du chargement du devis");
       navigate("/quotes");
+    }
+  };
+
+  // Fonction pour créer automatiquement un chantier depuis un devis accepté
+  const createSiteFromQuote = async (quoteId: string, quoteData: any) => {
+    if (!user) return;
+
+    // Vérifier si un chantier existe déjà pour ce devis
+    const { data: existingSite } = await supabase
+      .from("sites")
+      .select("id")
+      .eq("quote_id", quoteId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (existingSite) {
+      // Un chantier existe déjà, ne pas en créer un nouveau
+      return;
+    }
+
+    // Créer le chantier automatiquement
+    const { error: siteError } = await supabase
+      .from("sites")
+      .insert({
+        user_id: user.id,
+        client_id: quoteData.client_id,
+        quote_id: quoteId,
+        title: quoteData.title,
+        description: quoteData.description,
+        status: "active",
+        start_date: new Date().toISOString(),
+        total_amount: quoteData.amount,
+        paid_amount: quoteData.deposit_amount || 0,
+      });
+
+    if (siteError) {
+      console.error("Erreur lors de la création du chantier:", siteError);
+      toast.error("Devis accepté mais erreur lors de la création du chantier");
+    } else {
+      toast.success("Devis accepté et chantier créé automatiquement !");
     }
   };
 
@@ -123,20 +166,38 @@ const QuoteForm = () => {
       };
 
       if (id) {
-        const { error } = await supabase
+        // Mise à jour d'un devis existant
+        const { error, data } = await supabase
           .from("quotes")
           .update(quoteData)
           .eq("id", id)
-          .eq("user_id", user.id);
+          .eq("user_id", user.id)
+          .select()
+          .single();
 
         if (error) throw error;
+
+        // Si le statut passe à "accepted" et qu'il ne l'était pas avant
+        if (values.status === "accepted" && previousStatus !== "accepted" && id) {
+          await createSiteFromQuote(id, quoteData);
+        }
+
         toast.success("Devis modifié avec succès");
       } else {
-        const { error } = await supabase
+        // Création d'un nouveau devis
+        const { error, data } = await supabase
           .from("quotes")
-          .insert([quoteData]);
+          .insert([quoteData])
+          .select()
+          .single();
 
         if (error) throw error;
+
+        // Si le devis est créé directement avec le statut "accepted"
+        if (values.status === "accepted" && data) {
+          await createSiteFromQuote(data.id, quoteData);
+        }
+
         toast.success("Devis créé avec succès");
       }
 
@@ -266,56 +327,112 @@ const QuoteForm = () => {
                 <FormField
                   control={form.control}
                   name="depositPercentage"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Acompte (%) - Optionnel</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="text"
-                          placeholder="30"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Pourcentage de l'acompte (0-100)
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    const amount = form.watch("amount");
+                    const depositPercentage = field.value ? parseFloat(field.value) : 0;
+                    const depositAmount = amount && depositPercentage > 0 
+                      ? (parseFloat(amount) * depositPercentage) / 100 
+                      : 0;
+
+                    return (
+                      <FormItem>
+                        <FormLabel>Acompte (%) - Optionnel</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="text"
+                            placeholder="30"
+                            {...field}
+                          />
+                        </FormControl>
+                        {amount && depositPercentage > 0 && (
+                          <FormDescription className="text-primary font-medium">
+                            Montant de l'acompte : {depositAmount.toFixed(2)}€
+                          </FormDescription>
+                        )}
+                        {!amount && depositPercentage > 0 && (
+                          <FormDescription>
+                            Entrez d'abord le montant total pour voir l'acompte
+                          </FormDescription>
+                        )}
+                        {!depositPercentage && (
+                          <FormDescription>
+                            Pourcentage de l'acompte (0-100)
+                          </FormDescription>
+                        )}
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
 
                 <FormField
                   control={form.control}
                   name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Statut</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="draft">Brouillon</SelectItem>
-                          <SelectItem value="sent">Envoyé</SelectItem>
-                          <SelectItem value="accepted">Accepté</SelectItem>
-                          <SelectItem value="rejected">Refusé</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    const status = field.value;
+                    const willCreateSite = status === "accepted" && previousStatus !== "accepted";
+
+                    return (
+                      <FormItem>
+                        <FormLabel>Statut</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="draft">Brouillon</SelectItem>
+                            <SelectItem value="sent">Envoyé</SelectItem>
+                            <SelectItem value="accepted">Accepté</SelectItem>
+                            <SelectItem value="rejected">Refusé</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {willCreateSite && (
+                          <FormDescription className="text-success font-medium">
+                            ✓ Un chantier sera créé automatiquement si le devis est accepté
+                          </FormDescription>
+                        )}
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
 
-                <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                  {form.formState.isSubmitting ? "Chargement..." : id ? "Modifier" : "Créer"}
-                </Button>
+                <div className="space-y-2">
+                  {form.watch("amount") && form.watch("depositPercentage") && parseFloat(form.watch("depositPercentage") || "0") > 0 && (
+                    <Card className="bg-muted/50">
+                      <CardContent className="p-3">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Montant total:</span>
+                          <span className="font-bold">{parseFloat(form.watch("amount") || "0").toFixed(2)}€</span>
+                        </div>
+                        <div className="flex justify-between text-sm mt-1">
+                          <span className="text-muted-foreground">Acompte ({form.watch("depositPercentage")}%):</span>
+                          <span className="font-bold text-primary">
+                            {((parseFloat(form.watch("amount") || "0") * parseFloat(form.watch("depositPercentage") || "0")) / 100).toFixed(2)}€
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-sm mt-1 border-t pt-1">
+                          <span className="text-muted-foreground">Reste à payer:</span>
+                          <span className="font-bold">
+                            {(parseFloat(form.watch("amount") || "0") - (parseFloat(form.watch("amount") || "0") * parseFloat(form.watch("depositPercentage") || "0")) / 100).toFixed(2)}€
+                          </span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                  <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                    {form.formState.isSubmitting ? "Chargement..." : id ? "Modifier" : "Créer"}
+                  </Button>
+                </div>
               </form>
             </Form>
           </CardContent>
         </Card>
       </div>
+
+      <MobileNav />
     </div>
   );
 };

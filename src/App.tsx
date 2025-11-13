@@ -4,6 +4,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PaymentNotifications } from "@/components/PaymentNotifications";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 // Code splitting - Lazy load des pages pour réduire le bundle initial
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -12,7 +14,9 @@ const ClientForm = lazy(() => import("./pages/ClientForm"));
 const Quotes = lazy(() => import("./pages/Quotes"));
 const QuoteForm = lazy(() => import("./pages/QuoteForm"));
 const Sites = lazy(() => import("./pages/Sites"));
+const SiteForm = lazy(() => import("./pages/SiteForm"));
 const Payments = lazy(() => import("./pages/Payments"));
+const PaymentForm = lazy(() => import("./pages/PaymentForm"));
 const Employees = lazy(() => import("./pages/Employees"));
 const Auth = lazy(() => import("./pages/Auth"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -41,12 +45,14 @@ const queryClient = new QueryClient({
 });
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <BrowserRouter>
-        <Suspense fallback={<PageLoader />}>
-          <Routes>
+  <ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <PaymentNotifications />
+        <BrowserRouter>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/" element={<Dashboard />} />
             <Route path="/clients" element={<Clients />} />
@@ -56,8 +62,12 @@ const App = () => (
             <Route path="/quotes/new" element={<QuoteForm />} />
             <Route path="/quotes/:id" element={<QuoteForm />} />
             <Route path="/sites" element={<Sites />} />
+            <Route path="/sites/new" element={<SiteForm />} />
+            <Route path="/sites/:id" element={<SiteForm />} />
             <Route path="/employees" element={<Employees />} />
             <Route path="/payments" element={<Payments />} />
+            <Route path="/payments/new" element={<PaymentForm />} />
+            <Route path="/payments/:id" element={<PaymentForm />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
@@ -65,6 +75,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
+  </ThemeProvider>
 );
 
 export default App;

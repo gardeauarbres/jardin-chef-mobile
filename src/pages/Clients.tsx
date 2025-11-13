@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Pagination } from '@/components/Pagination';
 import MobileNav from '@/components/MobileNav';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -30,12 +31,15 @@ interface Client {
   address: string;
 }
 
+const ITEMS_PER_PAGE = 10;
+
 const Clients = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Utiliser le hook optimisé avec cache
   const { data: clients = [], isLoading, error } = useClients();
@@ -80,6 +84,19 @@ const Clients = () => {
       client.phone.includes(searchTerm)
     );
   }, [clients, searchTerm]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredClients.length / ITEMS_PER_PAGE);
+  const paginatedClients = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE;
+    return filteredClients.slice(start, end);
+  }, [filteredClients, currentPage]);
+
+  // Réinitialiser la page quand la recherche change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   const handleCall = (phone: string) => {
     window.location.href = `tel:${phone}`;
@@ -151,7 +168,7 @@ const Clients = () => {
         </div>
 
         <div className="space-y-3">
-          {filteredClients.length === 0 ? (
+          {paginatedClients.length === 0 ? (
             <Card>
               <CardContent className="p-6 text-center">
                 <p className="text-muted-foreground">
@@ -166,7 +183,7 @@ const Clients = () => {
               </CardContent>
             </Card>
           ) : (
-            filteredClients.map((client) => (
+            paginatedClients.map((client) => (
               <Card key={client.id} className="group cursor-pointer hover:shadow-glow hover:scale-[1.02] transition-all duration-200 animate-fade-in" onClick={() => navigate(`/clients/${client.id}`)}>
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
@@ -218,6 +235,14 @@ const Clients = () => {
             ))
           )}
         </div>
+
+        {totalPages > 1 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        )}
       </div>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

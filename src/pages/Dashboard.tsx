@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, FileText, Hammer, Euro, TrendingUp, LogOut } from 'lucide-react';
+import { Users, FileText, Hammer, Euro, TrendingUp, LogOut, Moon, Sun } from 'lucide-react';
 import { useMemo, useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import MobileNav from '@/components/MobileNav';
@@ -8,9 +8,17 @@ import { useNavigate } from 'react-router-dom';
 import { useClients, useQuotes, useSites, usePayments } from '@/hooks/useSupabaseQuery';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { useTheme } from '@/components/ThemeProvider';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const Dashboard = () => {
   const { user, loading, signOut } = useAuth();
+  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const [userName, setUserName] = useState<string>("");
   const [stats, setStats] = useState({
@@ -104,17 +112,39 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <header className="bg-primary text-primary-foreground p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">{userName || 'Chargement...'}</h1>
-            <p className="text-sm opacity-90 mt-1">Tableau de bord</p>
-          </div>
-          <Button variant="secondary" size="icon" onClick={signOut}>
-            <LogOut className="h-5 w-5" />
-          </Button>
-        </div>
-      </header>
+            <header className="bg-primary text-primary-foreground p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-2xl font-bold">{userName || 'Chargement...'}</h1>
+                  <p className="text-sm opacity-90 mt-1">Tableau de bord</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="secondary" size="icon">
+                        {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setTheme('light')}>
+                        <Sun className="h-4 w-4 mr-2" />
+                        Clair
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setTheme('dark')}>
+                        <Moon className="h-4 w-4 mr-2" />
+                        Sombre
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setTheme('system')}>
+                        Système
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <Button variant="secondary" size="icon" onClick={signOut}>
+                    <LogOut className="h-5 w-5" />
+                  </Button>
+                </div>
+              </div>
+            </header>
 
       <div className="p-4 space-y-4">
         <div className="grid grid-cols-2 gap-4">

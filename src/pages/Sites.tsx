@@ -3,8 +3,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Trash2 } from 'lucide-react';
+import { Pagination } from '@/components/Pagination';
+import { Trash2, Plus, Search, Filter } from 'lucide-react';
 import MobileNav from '@/components/MobileNav';
 import {
   AlertDialog,
@@ -38,11 +41,16 @@ interface Site {
   };
 }
 
+const ITEMS_PER_PAGE = 10;
+
 const Sites = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [siteToDelete, setSiteToDelete] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Utiliser le hook optimisé avec cache
   const { data: sites = [], isLoading } = useSites();
@@ -110,6 +118,41 @@ const Sites = () => {
     deleteMutation.mutate(siteToDelete);
   }, [siteToDelete, deleteMutation]);
 
+  // Filtrage et recherche
+  const filteredSites = useMemo(() => {
+    let filtered = sites;
+
+    // Filtre par statut
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(s => s.status === statusFilter);
+    }
+
+    // Recherche
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(s =>
+        s.title.toLowerCase().includes(term) ||
+        s.description.toLowerCase().includes(term) ||
+        getClientName(s).toLowerCase().includes(term)
+      );
+    }
+
+    return filtered;
+  }, [sites, statusFilter, searchTerm, getClientName]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredSites.length / ITEMS_PER_PAGE);
+  const paginatedSites = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE;
+    return filteredSites.slice(start, end);
+  }, [filteredSites, currentPage]);
+
+  // Réinitialiser la page quand les filtres changent
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
+
   if (loading || isLoading) {
     return (
       <div className="min-h-screen bg-background pb-20">
@@ -141,28 +184,66 @@ const Sites = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       <header className="bg-primary text-primary-foreground p-6">
-        <h1 className="text-2xl font-bold">Chantiers</h1>
-        <p className="text-sm opacity-90 mt-1">{sites.length} chantier{sites.length !== 1 ? 's' : ''}</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Chantiers</h1>
+            <p className="text-sm opacity-90 mt-1">{filteredSites.length} chantier{filteredSites.length !== 1 ? 's' : ''}{filteredSites.length !== sites.length ? ` sur ${sites.length}` : ''}</p>
+          </div>
+          <Button onClick={() => navigate('/sites/new')} size="icon" variant="secondary">
+            <Plus className="h-5 w-5" />
+          </Button>
+        </div>
       </header>
 
       <div className="p-4 space-y-3">
-        {sites.length === 0 ? (
+        {/* Barre de recherche et filtres */}
+        {sites.length > 0 && (
+          <div className="flex gap-2">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher un chantier..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[140px]">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous</SelectItem>
+                <SelectItem value="active">En cours</SelectItem>
+                <SelectItem value="completed">Terminé</SelectItem>
+                <SelectItem value="paused">En pause</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {paginatedSites.length === 0 ? (
           <Card>
             <CardContent className="p-6 text-center">
               <p className="text-muted-foreground">Aucun chantier en cours</p>
               <p className="text-xs text-muted-foreground mt-2">
-                Les chantiers sont créés à partir des devis acceptés
+                Les chantiers peuvent être créés automatiquement depuis les devis acceptés ou manuellement
               </p>
+              <Button onClick={() => navigate('/sites/new')} className="mt-4" variant="outline">
+                <Plus className="h-4 w-4 mr-2" />
+                Créer un chantier
+              </Button>
             </CardContent>
           </Card>
         ) : (
-          sites.map((site) => {
+          paginatedSites.map((site) => {
             const progress = calculateProgress(site.paid_amount, site.total_amount);
             const remainingAmount = site.total_amount - site.paid_amount;
 
             return (
-              <Card key={site.id} className="group cursor-pointer hover:shadow-glow hover:scale-[1.02] transition-all duration-200 animate-fade-in">
-                <CardContent className="p-4">
+            <Card key={site.id} className="group cursor-pointer hover:shadow-glow hover:scale-[1.02] transition-all duration-200 animate-fade-in" onClick={() => navigate(`/sites/${site.id}`)}>
+              <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
                       <h3 className="font-semibold">{site.title}</h3>
@@ -202,9 +283,17 @@ const Sites = () => {
                     )}
                   </div>
                 </CardContent>
-              </Card>
-            );
-          })
+            </Card>
+          );
+        })
+        )}
+
+        {totalPages > 1 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
         )}
       </div>
 

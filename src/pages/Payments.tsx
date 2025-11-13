@@ -2,8 +2,12 @@ import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Pagination } from '@/components/Pagination';
 import MobileNav from '@/components/MobileNav';
-import { Euro, Calendar, Trash2 } from 'lucide-react';
+import { Euro, Calendar, Trash2, Plus, Search, Filter } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,12 +42,17 @@ interface Payment {
   };
 }
 
+const ITEMS_PER_PAGE = 10;
+
 const Payments = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const [payments, setPayments] = useState<Payment[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [paymentToDelete, setPaymentToDelete] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -51,35 +60,32 @@ const Payments = () => {
     }
   }, [user, loading, navigate]);
 
-  useEffect(() => {
-    if (!user) return;
-    fetchPayments();
-  }, [user]);
+  // Utiliser le hook optimisé avec cache
+  const { data: payments = [], isLoading } = usePayments();
 
-  const fetchPayments = async () => {
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from('payments')
-      .select(`
-        *,
-        sites (
-          title
-        ),
-        clients (
-          first_name,
-          last_name
-        )
-      `)
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      toast.error("Erreur lors du chargement des paiements");
-    } else {
-      setPayments(data || []);
+  // Mutation optimisée pour la suppression
+  const deleteMutation = useSupabaseMutation(
+    async (paymentId: string) => {
+      const { error } = await supabase
+        .from('payments')
+        .delete()
+        .eq('id', paymentId);
+      
+      if (error) throw error;
+      return paymentId;
+    },
+    [['payments', user?.id || '']],
+    {
+      onSuccess: () => {
+        toast.success('Paiement supprimé');
+        setDeleteDialogOpen(false);
+        setPaymentToDelete(null);
+      },
+      onError: () => {
+        toast.error("Erreur lors de la suppression");
+      },
     }
-  };
+  );
 
   const getClientName = (payment: Payment) => {
     if (payment.clients) {
@@ -109,8 +115,34 @@ const Payments = () => {
     );
   };
 
+  // Filtrage et recherche
+  const filteredPayments = useMemo(() => {
+    let filtered = payments;
+
+    // Filtre par statut
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(p => p.status === statusFilter);
+    }
+
+    // Filtre par type
+    if (typeFilter !== 'all') {
+      filtered = filtered.filter(p => p.type === typeFilter);
+    }
+
+    // Recherche
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(p =>
+        getSiteName(p).toLowerCase().includes(term) ||
+        getClientName(p).toLowerCase().includes(term)
+      );
+    }
+
+    return filtered;
+  }, [payments, statusFilter, typeFilter, searchTerm, getSiteName, getClientName]);
+
   const sortedPayments = useMemo(() => {
-    return [...payments].sort((a, b) => {
+    return [...filteredPayments].sort((a, b) => {
       // Pending payments first
       if (a.status !== b.status) {
         return a.status === 'pending' ? -1 : 1;
@@ -120,13 +152,26 @@ const Payments = () => {
       const dateB = b.due_date || b.created_at;
       return new Date(dateA).getTime() - new Date(dateB).getTime();
     });
-  }, [payments]);
+  }, [filteredPayments]);
+
+  // Pagination
+  const totalPages = Math.ceil(sortedPayments.length / ITEMS_PER_PAGE);
+  const paginatedPayments = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE;
+    return sortedPayments.slice(start, end);
+  }, [sortedPayments, currentPage]);
+
+  // Réinitialiser la page quand les filtres changent
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, typeFilter]);
 
   const pendingTotal = useMemo(() => {
-    return payments
+    return filteredPayments
       .filter(p => p.status === 'pending')
       .reduce((sum, p) => sum + p.amount, 0);
-  }, [payments]);
+  }, [filteredPayments]);
 
   const handleDeleteClick = (paymentId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -134,27 +179,37 @@ const Payments = () => {
     setDeleteDialogOpen(true);
   };
 
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = () => {
     if (!paymentToDelete) return;
-
-    const { error } = await supabase
-      .from('payments')
-      .delete()
-      .eq('id', paymentToDelete);
-
-    if (error) {
-      toast.error("Erreur lors de la suppression");
-    } else {
-      toast.success('Paiement supprimé');
-      fetchPayments();
-    }
-
-    setDeleteDialogOpen(false);
-    setPaymentToDelete(null);
+    deleteMutation.mutate(paymentToDelete);
   };
 
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Chargement...</div>;
+  if (loading || isLoading) {
+    return (
+      <div className="min-h-screen bg-background pb-20">
+        <header className="bg-primary text-primary-foreground p-6">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-4 w-32 mt-2" />
+        </header>
+        <div className="p-4 space-y-4">
+          <Card>
+            <CardContent className="p-4">
+              <Skeleton className="h-10 w-full" />
+            </CardContent>
+          </Card>
+          {[1, 2, 3].map((i) => (
+            <Card key={i}>
+              <CardContent className="p-4">
+                <Skeleton className="h-6 w-48 mb-2" />
+                <Skeleton className="h-4 w-full mb-4" />
+                <Skeleton className="h-4 w-32" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <MobileNav />
+      </div>
+    );
   }
 
   if (!user) {
@@ -164,8 +219,15 @@ const Payments = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       <header className="bg-primary text-primary-foreground p-6">
-        <h1 className="text-2xl font-bold">Paiements</h1>
-        <p className="text-sm opacity-90 mt-1">{payments.length} paiement{payments.length !== 1 ? 's' : ''}</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Paiements</h1>
+            <p className="text-sm opacity-90 mt-1">{filteredPayments.length} paiement{filteredPayments.length !== 1 ? 's' : ''}{filteredPayments.length !== payments.length ? ` sur ${payments.length}` : ''}</p>
+          </div>
+          <Button onClick={() => navigate('/payments/new')} size="icon" variant="secondary">
+            <Plus className="h-5 w-5" />
+          </Button>
+        </div>
       </header>
 
       {pendingTotal > 0 && (
@@ -185,15 +247,61 @@ const Payments = () => {
       )}
 
       <div className="p-4 space-y-3">
-        {sortedPayments.length === 0 ? (
+        {/* Barre de recherche et filtres */}
+        {payments.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Rechercher un paiement..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="flex-1">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Statut" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les statuts</SelectItem>
+                  <SelectItem value="pending">En attente</SelectItem>
+                  <SelectItem value="paid">Payé</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="flex-1">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les types</SelectItem>
+                  <SelectItem value="deposit">Acompte</SelectItem>
+                  <SelectItem value="progress">Avancement</SelectItem>
+                  <SelectItem value="final">Solde</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        )}
+
+        {paginatedPayments.length === 0 ? (
           <Card>
             <CardContent className="p-6 text-center">
               <p className="text-muted-foreground">Aucun paiement enregistré</p>
+              <Button onClick={() => navigate('/payments/new')} className="mt-4" variant="outline">
+                <Plus className="h-4 w-4 mr-2" />
+                Créer un paiement
+              </Button>
             </CardContent>
           </Card>
         ) : (
-          sortedPayments.map((payment) => (
-              <Card key={payment.id} className="group cursor-pointer hover:shadow-glow hover:scale-[1.02] transition-all duration-200 animate-fade-in">
+          paginatedPayments.map((payment) => (
+              <Card key={payment.id} className="group cursor-pointer hover:shadow-glow hover:scale-[1.02] transition-all duration-200 animate-fade-in" onClick={() => navigate(`/payments/${payment.id}`)}>
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1">
@@ -233,6 +341,14 @@ const Payments = () => {
             </Card>
           ))
         )}
+
+        {totalPages > 1 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        )}
       </div>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -245,8 +361,12 @@ const Payments = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Supprimer
+            <AlertDialogAction 
+              onClick={handleDeleteConfirm} 
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? 'Suppression...' : 'Supprimer'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
