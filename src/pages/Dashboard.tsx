@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/components/ThemeProvider';
 import { GlobalSearch } from '@/components/GlobalSearch';
+import { DataExport } from '@/components/DataExport';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -182,6 +183,9 @@ const Dashboard = () => {
                 <div className="flex items-center gap-2">
                   <div className="hidden md:block">
                     <GlobalSearch />
+                  </div>
+                  <div className="hidden md:block">
+                    <DataExport />
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
