@@ -10,21 +10,41 @@ Pour que la confirmation d'email fonctionne correctement, vous devez configurer 
    - https://supabase.com/dashboard/project/qppuntwgpglsbdppejhw/settings/auth
 
 2. **Dans la section "URL Configuration"** :
-   - **Site URL** : `http://localhost:8080`
-   - **Redirect URLs** : Ajoutez ces URLs (une par ligne) :
+   - **Site URL** : `http://localhost:8080` (pour le développement)
+   - **Redirect URLs** : Ajoutez TOUTES ces URLs (une par ligne) :
+     
+     **Pour le développement local :**
      ```
      http://localhost:8080/**
      http://localhost:8080/auth
      http://localhost:8080/
      ```
-
-3. **Pour la production** (si vous déployez) :
-   - Ajoutez aussi votre URL de production :
+     
+     **Pour Vercel (production) :**
+     ```
+     https://votre-projet.vercel.app/**
+     https://votre-projet.vercel.app/auth
+     https://votre-projet.vercel.app/
+     ```
+     
+     ⚠️ **Remplacez `votre-projet` par votre nom de projet Vercel réel** (ex: `jardin-chef-mobile.vercel.app`)
+     
+     **Si vous avez un domaine personnalisé :**
      ```
      https://votre-domaine.com/**
      https://votre-domaine.com/auth
      https://votre-domaine.com/
      ```
+
+3. **Exemple complet** (si votre projet Vercel s'appelle `jardin-chef-mobile`) :
+   ```
+   http://localhost:8080/**
+   http://localhost:8080/auth
+   http://localhost:8080/
+   https://jardin-chef-mobile.vercel.app/**
+   https://jardin-chef-mobile.vercel.app/auth
+   https://jardin-chef-mobile.vercel.app/
+   ```
 
 ### Pourquoi cette configuration est importante
 
