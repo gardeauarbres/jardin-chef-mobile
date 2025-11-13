@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Pagination } from '@/components/Pagination';
+import { SortableList, SortOption } from '@/components/SortableList';
+import { DateRangeFilter } from '@/components/DateFilter';
 import { Trash2, Plus, Search, Filter } from 'lucide-react';
 import MobileNav from '@/components/MobileNav';
 import {
@@ -51,6 +53,8 @@ const Sites = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
 
   // Utiliser le hook optimisé avec cache
   const { data: sites = [], isLoading } = useSites();
@@ -137,8 +141,18 @@ const Sites = () => {
       );
     }
 
+    // Filtre par date de début
+    if (startDate || endDate) {
+      filtered = filtered.filter(s => {
+        const startDateObj = new Date(s.start_date);
+        if (startDate && startDateObj < startDate) return false;
+        if (endDate && startDateObj > endDate) return false;
+        return true;
+      });
+    }
+
     return filtered;
-  }, [sites, statusFilter, searchTerm, getClientName]);
+  }, [sites, statusFilter, searchTerm, startDate, endDate, getClientName]);
 
   // Pagination
   const totalPages = Math.ceil(filteredSites.length / ITEMS_PER_PAGE);
@@ -151,7 +165,7 @@ const Sites = () => {
   // Réinitialiser la page quand les filtres changent
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter]);
+  }, [searchTerm, statusFilter, startDate, endDate]);
 
   if (loading || isLoading) {
     return (
@@ -198,32 +212,67 @@ const Sites = () => {
       <div className="p-4 space-y-3">
         {/* Barre de recherche et filtres */}
         {sites.length > 0 && (
-          <div className="flex gap-2">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher un chantier..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Rechercher un chantier..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[140px]">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous</SelectItem>
+                  <SelectItem value="active">En cours</SelectItem>
+                  <SelectItem value="completed">Terminé</SelectItem>
+                  <SelectItem value="paused">En pause</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              <DateRangeFilter
+                startDate={startDate}
+                endDate={endDate}
+                onDateRangeChange={(start, end) => {
+                  setStartDate(start);
+                  setEndDate(end);
+                  setCurrentPage(1);
+                }}
               />
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[140px]">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous</SelectItem>
-                <SelectItem value="active">En cours</SelectItem>
-                <SelectItem value="completed">Terminé</SelectItem>
-                <SelectItem value="paused">En pause</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
         )}
 
-        {paginatedSites.length === 0 ? (
+        <SortableList
+          items={filteredSites}
+          sortOptions={[
+            { key: 'start_date', label: 'Date de début', getValue: (s) => new Date(s.start_date) },
+            { key: 'created_at', label: 'Date de création', getValue: (s) => new Date((s as any).created_at || s.start_date) },
+            { key: 'title', label: 'Titre' },
+            { key: 'total_amount', label: 'Montant total', getValue: (s) => s.total_amount || 0 },
+            { key: 'status', label: 'Statut' },
+          ] as SortOption<Site>[]}
+          defaultSort={{ key: 'start_date', direction: 'desc' }}
+        >
+          {(sortedSites) => {
+            // Pagination sur les chantiers triés
+            const totalPages = Math.ceil(sortedSites.length / ITEMS_PER_PAGE);
+            const paginatedSites = useMemo(() => {
+              const start = (currentPage - 1) * ITEMS_PER_PAGE;
+              const end = start + ITEMS_PER_PAGE;
+              return sortedSites.slice(start, end);
+            }, [sortedSites, currentPage]);
+
+            return (
+              <>
+                {paginatedSites.length === 0 ? (
           <Card>
             <CardContent className="p-6 text-center">
               <p className="text-muted-foreground">Aucun chantier en cours</p>
