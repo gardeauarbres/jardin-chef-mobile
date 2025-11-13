@@ -7,6 +7,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Pagination } from '@/components/Pagination';
+import { SortableList, SortOption } from '@/components/SortableList';
+import { DateRangeFilter } from '@/components/DateFilter';
 import MobileNav from '@/components/MobileNav';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -48,6 +50,8 @@ const Quotes = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -101,8 +105,18 @@ const Quotes = () => {
       );
     }
 
+    // Filtre par date de création
+    if (startDate || endDate) {
+      filtered = filtered.filter(q => {
+        const createdDate = new Date(q.created_at);
+        if (startDate && createdDate < startDate) return false;
+        if (endDate && createdDate > endDate) return false;
+        return true;
+      });
+    }
+
     return filtered;
-  }, [quotes, statusFilter, searchTerm]);
+  }, [quotes, statusFilter, searchTerm, startDate, endDate]);
 
   // Pagination
   const totalPages = Math.ceil(filteredQuotes.length / ITEMS_PER_PAGE);
@@ -115,7 +129,7 @@ const Quotes = () => {
   // Réinitialiser la page quand les filtres changent
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter]);
+  }, [searchTerm, statusFilter, startDate, endDate]);
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline', label: string }> = {
@@ -177,32 +191,68 @@ const Quotes = () => {
 
       <div className="p-4 space-y-3">
         {/* Barre de recherche et filtres */}
-        <div className="flex gap-2">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Rechercher un devis..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+        {quotes.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Rechercher un devis..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[140px]">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous</SelectItem>
+                  <SelectItem value="draft">Brouillon</SelectItem>
+                  <SelectItem value="sent">Envoyé</SelectItem>
+                  <SelectItem value="accepted">Accepté</SelectItem>
+                  <SelectItem value="rejected">Refusé</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              <DateRangeFilter
+                startDate={startDate}
+                endDate={endDate}
+                onDateRangeChange={(start, end) => {
+                  setStartDate(start);
+                  setEndDate(end);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[140px]">
-              <Filter className="h-4 w-4 mr-2" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tous</SelectItem>
-              <SelectItem value="draft">Brouillon</SelectItem>
-              <SelectItem value="sent">Envoyé</SelectItem>
-              <SelectItem value="accepted">Accepté</SelectItem>
-              <SelectItem value="rejected">Refusé</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        )}
 
-        {paginatedQuotes.length === 0 ? (
+        <SortableList
+          items={filteredQuotes}
+          sortOptions={[
+            { key: 'created_at', label: 'Date de création', getValue: (q) => new Date(q.created_at) },
+            { key: 'title', label: 'Titre' },
+            { key: 'amount', label: 'Montant', getValue: (q) => q.amount || 0 },
+            { key: 'status', label: 'Statut' },
+          ] as SortOption<Quote>[]}
+          defaultSort={{ key: 'created_at', direction: 'desc' }}
+        >
+          {(sortedQuotes) => {
+            // Pagination sur les devis triés
+            const totalPages = Math.ceil(sortedQuotes.length / ITEMS_PER_PAGE);
+            const paginatedQuotes = useMemo(() => {
+              const start = (currentPage - 1) * ITEMS_PER_PAGE;
+              const end = start + ITEMS_PER_PAGE;
+              return sortedQuotes.slice(start, end);
+            }, [sortedQuotes, currentPage]);
+
+            return (
+              <>
+                {paginatedQuotes.length === 0 ? (
           <Card>
             <CardContent className="p-6 text-center">
               <p className="text-muted-foreground">
@@ -266,16 +316,20 @@ const Quotes = () => {
                 </div>
               </CardContent>
             </Card>
-          ))
-        )}
+                  ))
+                )}
 
-        {totalPages > 1 && (
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-          />
-        )}
+                {totalPages > 1 && (
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                  />
+                )}
+              </>
+            );
+          }}
+        </SortableList>
       </div>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
