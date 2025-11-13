@@ -24,20 +24,21 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState<string>("");
 
-  // Utiliser les hooks optimisés avec cache - TOUJOURS appelés, même si user est null
-  const clientsQuery = useClients();
-  const quotesQuery = useQuotes();
-  const sitesQuery = useSites();
-  const paymentsQuery = usePayments();
-
-  // useEffect pour la redirection - TOUJOURS appelé
+  // useEffect pour la redirection - TOUJOURS appelé en premier
   useEffect(() => {
     if (!loading && !user) {
       navigate("/auth");
     }
   }, [user, loading, navigate]);
 
-  // useEffect pour récupérer le profil - TOUJOURS appelé
+  // Utiliser les hooks optimisés avec cache - TOUJOURS appelés après les useEffect de base
+  // Ces hooks sont toujours appelés même si user est null (React Query gère enabled)
+  const clientsQuery = useClients();
+  const quotesQuery = useQuotes();
+  const sitesQuery = useSites();
+  const paymentsQuery = usePayments();
+
+  // useEffect pour récupérer le profil - TOUJOURS appelé après les hooks de données
   useEffect(() => {
     if (!user) return;
 

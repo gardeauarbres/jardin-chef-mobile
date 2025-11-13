@@ -34,6 +34,6 @@ export default defineConfig(({ mode }) => ({
       },
     },
     chunkSizeWarningLimit: 1000, // Augmenter la limite pour les chunks plus gros
-    sourcemap: false, // Désactiver les sourcemaps en production pour réduire la taille
+    sourcemap: mode === 'development', // Activer les sourcemaps en développement pour le débogage
   },
 }));
