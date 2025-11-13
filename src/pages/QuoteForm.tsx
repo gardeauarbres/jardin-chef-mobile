@@ -17,6 +17,7 @@ import { useSupabaseMutation } from "@/hooks/useSupabaseQuery";
 import { exportQuoteToPDF } from "@/lib/pdfExport";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { AutoSaveIndicator } from "@/components/AutoSaveIndicator";
+import { AIQuoteHelper } from "@/components/AIQuoteHelper";
 import MobileNav from "@/components/MobileNav";
 
 interface Client {
@@ -353,6 +354,20 @@ const QuoteForm = () => {
                           {...field}
                         />
                       </FormControl>
+                      <AIQuoteHelper
+                        title={form.watch("title") || ""}
+                        description={field.value || ""}
+                        amount={form.watch("amount") || ""}
+                        onDescriptionGenerated={(desc) => {
+                          field.onChange(desc);
+                        }}
+                        onPriceSuggested={(price) => {
+                          form.setValue("amount", price.toString());
+                        }}
+                        onDepositSuggested={(percentage) => {
+                          form.setValue("depositPercentage", percentage.toString());
+                        }}
+                      />
                       <FormMessage />
                     </FormItem>
                   )}

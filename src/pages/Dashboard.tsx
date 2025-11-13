@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/components/ThemeProvider';
 import { ThemeColorPicker } from '@/components/ThemeColorPicker';
+import { AIAssistant } from '@/components/AIAssistant';
 import { GlobalSearch } from '@/components/GlobalSearch';
 import { DataExport } from '@/components/DataExport';
 import {
@@ -218,15 +219,16 @@ const Dashboard = () => {
                   <h1 className="text-2xl font-bold">{userName || 'Chargement...'}</h1>
                   <p className="text-sm opacity-90 mt-1">Tableau de bord</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="hidden md:block">
-                    <GlobalSearch />
-                  </div>
-                  <div className="hidden md:block">
-                    <DataExport />
-                  </div>
-                  <ThemeColorPicker />
-                  <DropdownMenu>
+                       <div className="flex items-center gap-2">
+                         <div className="hidden md:block">
+                           <GlobalSearch />
+                         </div>
+                         <div className="hidden md:block">
+                           <DataExport />
+                         </div>
+                         <AIAssistant />
+                         <ThemeColorPicker />
+                         <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="secondary" size="icon" className="min-h-[44px] min-w-[44px]">
                         {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
