@@ -31,6 +31,15 @@ const MobileNav = () => {
         </NavLink>
         
         <NavLink
+          to="/more"
+          className="flex flex-col items-center justify-center text-muted-foreground transition-colors"
+          activeClassName="text-primary"
+        >
+          <MoreHorizontal className="h-5 w-5" />
+          <span className="text-xs mt-1">Plus</span>
+        </NavLink>
+        
+        <NavLink
           to="/quotes"
           className="flex flex-col items-center justify-center text-muted-foreground transition-colors"
           activeClassName="text-primary"
@@ -46,15 +55,6 @@ const MobileNav = () => {
         >
           <Wallet className="h-5 w-5" />
           <span className="text-xs mt-1">Paiements</span>
-        </NavLink>
-        
-        <NavLink
-          to="/more"
-          className="flex flex-col items-center justify-center text-muted-foreground transition-colors"
-          activeClassName="text-primary"
-        >
-          <MoreHorizontal className="h-5 w-5" />
-          <span className="text-xs mt-1">Plus</span>
         </NavLink>
       </div>
     </nav>
