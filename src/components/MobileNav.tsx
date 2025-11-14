@@ -1,5 +1,5 @@
 import { NavLink } from './NavLink';
-import { Home, Users, FileText, Hammer, Wallet, Clock, Receipt, MoreHorizontal } from 'lucide-react';
+import { Home, Users, FileText, Wallet, MoreHorizontal } from 'lucide-react';
 import { GlobalSearch } from './GlobalSearch';
 
 const MobileNav = () => {
@@ -11,7 +11,7 @@ const MobileNav = () => {
       </div>
       
       <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50 shadow-lg">
-        <div className="grid grid-cols-7 h-16 max-w-screen-xl mx-auto">
+        <div className="grid grid-cols-5 h-16 max-w-screen-xl mx-auto">
         <NavLink
           to="/"
           className="flex flex-col items-center justify-center text-muted-foreground transition-colors"
@@ -40,24 +40,6 @@ const MobileNav = () => {
         </NavLink>
         
         <NavLink
-          to="/more"
-          className="flex flex-col items-center justify-center text-muted-foreground transition-colors"
-          activeClassName="text-primary"
-        >
-          <MoreHorizontal className="h-5 w-5" />
-          <span className="text-xs mt-1">Plus</span>
-        </NavLink>
-        
-        <NavLink
-          to="/employees"
-          className="flex flex-col items-center justify-center text-muted-foreground transition-colors"
-          activeClassName="text-primary"
-        >
-          <Clock className="h-5 w-5" />
-          <span className="text-xs mt-1">Employés</span>
-        </NavLink>
-        
-        <NavLink
           to="/payments"
           className="flex flex-col items-center justify-center text-muted-foreground transition-colors"
           activeClassName="text-primary"
@@ -67,12 +49,12 @@ const MobileNav = () => {
         </NavLink>
         
         <NavLink
-          to="/invoices"
+          to="/more"
           className="flex flex-col items-center justify-center text-muted-foreground transition-colors"
           activeClassName="text-primary"
         >
-          <Receipt className="h-5 w-5" />
-          <span className="text-xs mt-1">Factures</span>
+          <MoreHorizontal className="h-5 w-5" />
+          <span className="text-xs mt-1">Plus</span>
         </NavLink>
       </div>
     </nav>

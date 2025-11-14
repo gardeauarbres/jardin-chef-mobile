@@ -11,6 +11,8 @@ import {
   LogOut,
   Hammer,
   Building2,
+  Clock,
+  Receipt,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -27,6 +29,20 @@ const More = () => {
       icon: Building2,
       route: '/profile',
       color: 'text-primary',
+    },
+    {
+      title: 'Employés',
+      description: 'Gestion des heures et salaires',
+      icon: Clock,
+      route: '/employees',
+      color: 'text-green-500',
+    },
+    {
+      title: 'Factures',
+      description: 'Gérez vos factures clients',
+      icon: Receipt,
+      route: '/invoices',
+      color: 'text-blue-500',
     },
     {
       title: 'Chantiers',
