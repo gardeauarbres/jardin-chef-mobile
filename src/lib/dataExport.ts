@@ -270,3 +270,119 @@ export function exportInvoices(
   }
 }
 
+/**
+ * Exporte les paiements en Excel/CSV
+ */
+export function exportPayments(
+  payments: Array<{
+    id: string;
+    site_id: string;
+    client_id: string;
+    amount: number;
+    type: string;
+    status: string;
+    due_date: string | null;
+    paid_date: string | null;
+    created_at: string;
+    sites?: {
+      title: string;
+    };
+    clients?: {
+      first_name: string;
+      last_name: string;
+    };
+  }>,
+  exportFormat: 'excel' | 'csv' = 'excel'
+): void {
+  if (!payments || payments.length === 0) {
+    throw new Error('Aucun paiement à exporter');
+  }
+
+  try {
+    const typeLabels: Record<string, string> = {
+      deposit: 'Acompte',
+      progress: 'Avancement',
+      final: 'Solde',
+    };
+
+    const statusLabels: Record<string, string> = {
+      pending: 'En attente',
+      paid: 'Payé',
+    };
+
+    const exportData = payments.map((payment) => ({
+      'ID': payment.id || '',
+      'Chantier': payment.sites?.title || '',
+      'Client': payment.clients
+        ? `${payment.clients.first_name || ''} ${payment.clients.last_name || ''}`.trim()
+        : '',
+      'Montant (€)': payment.amount ? payment.amount.toFixed(2) : '0.00',
+      'Type': typeLabels[payment.type] || payment.type || '',
+      'Statut': statusLabels[payment.status] || payment.status || '',
+      'Date d\'échéance': payment.due_date
+        ? format(new Date(payment.due_date), 'dd/MM/yyyy', { locale: fr })
+        : '',
+      'Date de paiement': payment.paid_date
+        ? format(new Date(payment.paid_date), 'dd/MM/yyyy', { locale: fr })
+        : '',
+      'Date de création': payment.created_at
+        ? format(new Date(payment.created_at), 'dd/MM/yyyy', { locale: fr })
+        : '',
+    }));
+
+    const today = new Date();
+    const filename = `paiements_${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    if (exportFormat === 'excel') {
+      exportToExcel(exportData, filename, 'Paiements');
+    } else {
+      exportToCSV(exportData, filename);
+    }
+  } catch (error) {
+    console.error('Erreur dans exportPayments:', error);
+    throw error;
+  }
+}
+
+/**
+ * Exporte les employés en Excel/CSV
+ */
+export function exportEmployees(
+  employees: Array<{
+    id: string;
+    first_name: string;
+    last_name: string;
+    hourly_rate: number;
+    created_at: string;
+  }>,
+  exportFormat: 'excel' | 'csv' = 'excel'
+): void {
+  if (!employees || employees.length === 0) {
+    throw new Error('Aucun employé à exporter');
+  }
+
+  try {
+    const exportData = employees.map((employee) => ({
+      'ID': employee.id || '',
+      'Prénom': employee.first_name || '',
+      'Nom': employee.last_name || '',
+      'Taux horaire (€)': employee.hourly_rate ? employee.hourly_rate.toFixed(2) : '0.00',
+      'Date de création': employee.created_at
+        ? format(new Date(employee.created_at), 'dd/MM/yyyy', { locale: fr })
+        : '',
+    }));
+
+    const today = new Date();
+    const filename = `employes_${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    if (exportFormat === 'excel') {
+      exportToExcel(exportData, filename, 'Employés');
+    } else {
+      exportToCSV(exportData, filename);
+    }
+  } catch (error) {
+    console.error('Erreur dans exportEmployees:', error);
+    throw error;
+  }
+}
+

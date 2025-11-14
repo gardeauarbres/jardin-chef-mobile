@@ -9,7 +9,7 @@ import { Pagination } from '@/components/Pagination';
 import { SortableList, SortOption } from '@/components/SortableList';
 import { DateRangeFilter } from '@/components/DateFilter';
 import MobileNav from '@/components/MobileNav';
-import { Euro, Calendar, Trash2, Plus, Search, Filter } from 'lucide-react';
+import { Euro, Calendar, Trash2, Plus, Search, Filter, FileSpreadsheet, FileText, Upload, CheckSquare, Square } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,6 +25,16 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePayments, useSupabaseMutation } from '@/hooks/useSupabaseQuery';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
+import { exportPayments } from '@/lib/dataExport';
+import { importPayments } from '@/lib/dataImport';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface Payment {
   id: string;
@@ -50,6 +60,7 @@ const ITEMS_PER_PAGE = 10;
 const Payments = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const queryClient = useQueryClient();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [paymentToDelete, setPaymentToDelete] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -58,6 +69,8 @@ const Payments = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
+  const [selectedPayments, setSelectedPayments] = useState<Set<string>>(new Set());
+  const [isSelectMode, setIsSelectMode] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -180,6 +193,74 @@ const Payments = () => {
     deleteMutation.mutate(paymentToDelete);
   };
 
+  // Gestion de la sélection
+  const toggleSelectMode = () => {
+    setIsSelectMode(!isSelectMode);
+    if (isSelectMode) {
+      setSelectedPayments(new Set());
+    }
+  };
+
+  const togglePaymentSelection = (paymentId: string) => {
+    const newSelection = new Set(selectedPayments);
+    if (newSelection.has(paymentId)) {
+      newSelection.delete(paymentId);
+    } else {
+      newSelection.add(paymentId);
+    }
+    setSelectedPayments(newSelection);
+  };
+
+  const selectAllPayments = () => {
+    setSelectedPayments(new Set(filteredPayments.map(p => p.id)));
+  };
+
+  const deselectAllPayments = () => {
+    setSelectedPayments(new Set());
+  };
+
+  const handleExportSelected = (format: 'excel' | 'csv') => {
+    if (selectedPayments.size === 0) {
+      toast.error('Veuillez sélectionner au moins un paiement');
+      return;
+    }
+
+    const selectedPaymentsData = filteredPayments.filter(p => selectedPayments.has(p.id));
+    try {
+      if (format === 'excel') {
+        exportPayments(selectedPaymentsData, 'excel');
+        toast.success(`${selectedPayments.size} paiement(s) exporté(s) en Excel`);
+      } else {
+        exportPayments(selectedPaymentsData, 'csv');
+        toast.success(`${selectedPayments.size} paiement(s) exporté(s) en CSV`);
+      }
+      setIsSelectMode(false);
+      setSelectedPayments(new Set());
+    } catch (error) {
+      console.error('Erreur export paiements:', error);
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de l\'export');
+    }
+  };
+
+  const handleImportFile = async (file: File) => {
+    if (!user) {
+      toast.error('Vous devez être connecté pour importer');
+      return;
+    }
+
+    if (!confirm(`Voulez-vous importer les données depuis "${file.name}" ?`)) {
+      return;
+    }
+
+    try {
+      await importPayments(file, user.id);
+      queryClient.invalidateQueries({ queryKey: ['payments', user.id] });
+      toast.success('Import réussi');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de l\'import');
+    }
+  };
+
   if (loading || isLoading) {
     return (
       <div className="min-h-screen bg-background pb-20">
@@ -220,9 +301,85 @@ const Payments = () => {
             <h1 className="text-2xl font-bold">Paiements</h1>
             <p className="text-sm opacity-90 mt-1">{filteredPayments.length} paiement{filteredPayments.length !== 1 ? 's' : ''}{filteredPayments.length !== payments.length ? ` sur ${payments.length}` : ''}</p>
           </div>
-          <Button onClick={() => navigate('/payments/new')} size="icon" variant="secondary">
-            <Plus className="h-5 w-5" />
-          </Button>
+          <div className="flex gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="icon" variant="secondary">
+                  <FileSpreadsheet className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {isSelectMode ? (
+                  <>
+                    <DropdownMenuItem onClick={selectAllPayments}>
+                      <CheckSquare className="h-4 w-4 mr-2" />
+                      Tout sélectionner
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={deselectAllPayments}>
+                      <Square className="h-4 w-4 mr-2" />
+                      Tout désélectionner
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={toggleSelectMode}>
+                      Annuler la sélection
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  <>
+                    <DropdownMenuItem onClick={toggleSelectMode}>
+                      <CheckSquare className="h-4 w-4 mr-2" />
+                      Mode sélection
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        try {
+                          exportPayments(filteredPayments, 'excel');
+                          toast.success('Export Excel réussi');
+                        } catch (error) {
+                          console.error('Erreur export paiements Excel:', error);
+                          toast.error(error instanceof Error ? error.message : 'Erreur lors de l\'export');
+                        }
+                      }}
+                    >
+                      <FileSpreadsheet className="h-4 w-4 mr-2" />
+                      Exporter tout en Excel
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        try {
+                          exportPayments(filteredPayments, 'csv');
+                          toast.success('Export CSV réussi');
+                        } catch (error) {
+                          console.error('Erreur export paiements CSV:', error);
+                          toast.error(error instanceof Error ? error.message : 'Erreur lors de l\'export');
+                        }
+                      }}
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Exporter tout en CSV
+                    </DropdownMenuItem>
+                  </>
+                )}
+                <DropdownMenuItem
+                  onClick={() => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = '.xlsx,.xls,.csv';
+                    input.onchange = (e) => {
+                      const file = (e.target as HTMLInputElement).files?.[0];
+                      if (file) handleImportFile(file);
+                    };
+                    input.click();
+                  }}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Importer
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button onClick={() => navigate('/payments/new')} size="icon" variant="secondary">
+              <Plus className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -243,6 +400,37 @@ const Payments = () => {
       )}
 
       <div className="p-4 space-y-3">
+        {/* Barre d'action pour la sélection */}
+        {isSelectMode && selectedPayments.size > 0 && (
+          <Card className="bg-primary/10 border-primary">
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">
+                  {selectedPayments.size} paiement{selectedPayments.size !== 1 ? 's' : ''} sélectionné{selectedPayments.size !== 1 ? 's' : ''}
+                </span>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleExportSelected('excel')}
+                  >
+                    <FileSpreadsheet className="h-4 w-4 mr-2" />
+                    Excel
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleExportSelected('csv')}
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    CSV
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Barre de recherche et filtres */}
         {payments.length > 0 && (
           <div className="space-y-2">
@@ -331,12 +519,21 @@ const Payments = () => {
                   </Card>
                 ) : (
                   paginatedPayments.map((payment) => (
-              <Card key={payment.id} className="group cursor-pointer hover:shadow-glow hover:scale-[1.02] transition-all duration-200 animate-fade-in" onClick={() => navigate(`/payments/${payment.id}`)}>
+              <Card key={payment.id} className={`group ${isSelectMode ? '' : 'cursor-pointer hover:shadow-glow hover:scale-[1.02]'} transition-all duration-200 animate-fade-in`} onClick={() => !isSelectMode && navigate(`/payments/${payment.id}`)}>
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-2">
-                    <div className="flex-1">
-                      <h3 className="font-semibold">{getSiteName(payment)}</h3>
-                      <p className="text-sm text-muted-foreground">{getClientName(payment)}</p>
+                    <div className="flex-1 flex items-center gap-2">
+                      {isSelectMode && (
+                        <Checkbox
+                          checked={selectedPayments.has(payment.id)}
+                          onCheckedChange={() => togglePaymentSelection(payment.id)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      )}
+                      <div className="flex-1">
+                        <h3 className="font-semibold">{getSiteName(payment)}</h3>
+                        <p className="text-sm text-muted-foreground">{getClientName(payment)}</p>
+                      </div>
                     </div>
                   <div className="flex items-start gap-2">
                     <div className="text-right space-y-1">

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Euro, Clock, TrendingUp, Trash2 } from 'lucide-react';
+import { Plus, Euro, Clock, TrendingUp, Trash2, FileSpreadsheet, FileText, Upload, CheckSquare, Square } from 'lucide-react';
 import MobileNav from '@/components/MobileNav';
 import { toast } from 'sonner';
 import {
@@ -19,6 +19,16 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
+import { exportEmployees } from '@/lib/dataExport';
+import { importEmployees } from '@/lib/dataImport';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface Employee {
   id: string;
@@ -41,6 +51,7 @@ interface Timesheet {
 const Employees = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const queryClient = useQueryClient();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [timesheets, setTimesheets] = useState<Timesheet[]>([]);
   const [showAddEmployee, setShowAddEmployee] = useState(false);
@@ -48,6 +59,8 @@ const Employees = () => {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [employeeToDelete, setEmployeeToDelete] = useState<string | null>(null);
+  const [selectedEmployees, setSelectedEmployees] = useState<Set<string>>(new Set());
+  const [isSelectMode, setIsSelectMode] = useState(false);
 
   const [newEmployee, setNewEmployee] = useState({
     firstName: '',
@@ -246,6 +259,74 @@ const Employees = () => {
     return { totalHours, totalDue, totalPaid };
   };
 
+  // Gestion de la sélection
+  const toggleSelectMode = () => {
+    setIsSelectMode(!isSelectMode);
+    if (isSelectMode) {
+      setSelectedEmployees(new Set());
+    }
+  };
+
+  const toggleEmployeeSelection = (employeeId: string) => {
+    const newSelection = new Set(selectedEmployees);
+    if (newSelection.has(employeeId)) {
+      newSelection.delete(employeeId);
+    } else {
+      newSelection.add(employeeId);
+    }
+    setSelectedEmployees(newSelection);
+  };
+
+  const selectAllEmployees = () => {
+    setSelectedEmployees(new Set(employees.map(e => e.id)));
+  };
+
+  const deselectAllEmployees = () => {
+    setSelectedEmployees(new Set());
+  };
+
+  const handleExportSelected = (format: 'excel' | 'csv') => {
+    if (selectedEmployees.size === 0) {
+      toast.error('Veuillez sélectionner au moins un employé');
+      return;
+    }
+
+    const selectedEmployeesData = employees.filter(e => selectedEmployees.has(e.id));
+    try {
+      if (format === 'excel') {
+        exportEmployees(selectedEmployeesData, 'excel');
+        toast.success(`${selectedEmployees.size} employé(s) exporté(s) en Excel`);
+      } else {
+        exportEmployees(selectedEmployeesData, 'csv');
+        toast.success(`${selectedEmployees.size} employé(s) exporté(s) en CSV`);
+      }
+      setIsSelectMode(false);
+      setSelectedEmployees(new Set());
+    } catch (error) {
+      console.error('Erreur export employés:', error);
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de l\'export');
+    }
+  };
+
+  const handleImportFile = async (file: File) => {
+    if (!user) {
+      toast.error('Vous devez être connecté pour importer');
+      return;
+    }
+
+    if (!confirm(`Voulez-vous importer les données depuis "${file.name}" ?`)) {
+      return;
+    }
+
+    try {
+      await importEmployees(file, user.id);
+      fetchEmployees();
+      toast.success('Import réussi');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de l\'import');
+    }
+  };
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Chargement...</div>;
   }
@@ -257,11 +338,120 @@ const Employees = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       <header className="bg-primary text-primary-foreground p-6">
-        <h1 className="text-2xl font-bold">Employés</h1>
-        <p className="text-sm opacity-90 mt-1">Gestion des heures</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Employés</h1>
+            <p className="text-sm opacity-90 mt-1">Gestion des heures</p>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="icon" variant="secondary">
+                <FileSpreadsheet className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {isSelectMode ? (
+                <>
+                  <DropdownMenuItem onClick={selectAllEmployees}>
+                    <CheckSquare className="h-4 w-4 mr-2" />
+                    Tout sélectionner
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={deselectAllEmployees}>
+                    <Square className="h-4 w-4 mr-2" />
+                    Tout désélectionner
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={toggleSelectMode}>
+                    Annuler la sélection
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                <>
+                  <DropdownMenuItem onClick={toggleSelectMode}>
+                    <CheckSquare className="h-4 w-4 mr-2" />
+                    Mode sélection
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      try {
+                        exportEmployees(employees, 'excel');
+                        toast.success('Export Excel réussi');
+                      } catch (error) {
+                        console.error('Erreur export employés Excel:', error);
+                        toast.error(error instanceof Error ? error.message : 'Erreur lors de l\'export');
+                      }
+                    }}
+                  >
+                    <FileSpreadsheet className="h-4 w-4 mr-2" />
+                    Exporter tout en Excel
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      try {
+                        exportEmployees(employees, 'csv');
+                        toast.success('Export CSV réussi');
+                      } catch (error) {
+                        console.error('Erreur export employés CSV:', error);
+                        toast.error(error instanceof Error ? error.message : 'Erreur lors de l\'export');
+                      }
+                    }}
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Exporter tout en CSV
+                  </DropdownMenuItem>
+                </>
+              )}
+              <DropdownMenuItem
+                onClick={() => {
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = '.xlsx,.xls,.csv';
+                  input.onchange = (e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0];
+                    if (file) handleImportFile(file);
+                  };
+                  input.click();
+                }}
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Importer
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </header>
 
       <div className="p-4 space-y-4">
+        {/* Barre d'action pour la sélection */}
+        {isSelectMode && selectedEmployees.size > 0 && (
+          <Card className="bg-primary/10 border-primary">
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">
+                  {selectedEmployees.size} employé{selectedEmployees.size !== 1 ? 's' : ''} sélectionné{selectedEmployees.size !== 1 ? 's' : ''}
+                </span>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleExportSelected('excel')}
+                  >
+                    <FileSpreadsheet className="h-4 w-4 mr-2" />
+                    Excel
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleExportSelected('csv')}
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    CSV
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="grid grid-cols-3 gap-2">
           <Card>
             <CardHeader className="pb-2">
@@ -411,15 +601,24 @@ const Employees = () => {
             return (
               <Card key={employee.id} className="group hover:shadow-glow hover:scale-[1.01] transition-all duration-200 animate-fade-in">
                 <CardHeader 
-                  className="cursor-pointer"
-                  onClick={() => setSelectedEmployeeId(isExpanded ? '' : employee.id)}
+                  className={isSelectMode ? '' : 'cursor-pointer'}
+                  onClick={() => !isSelectMode && setSelectedEmployeeId(isExpanded ? '' : employee.id)}
                 >
                   <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <CardTitle className="text-base">
-                        {employee.first_name} {employee.last_name}
-                      </CardTitle>
-                      <p className="text-sm text-muted-foreground">{employee.hourly_rate}€/h</p>
+                    <div className="flex-1 flex items-center gap-2">
+                      {isSelectMode && (
+                        <Checkbox
+                          checked={selectedEmployees.has(employee.id)}
+                          onCheckedChange={() => toggleEmployeeSelection(employee.id)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      )}
+                      <div className="flex-1">
+                        <CardTitle className="text-base">
+                          {employee.first_name} {employee.last_name}
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground">{employee.hourly_rate}€/h</p>
+                      </div>
                     </div>
                     <div className="flex items-start gap-3">
                       <div className="text-right">
