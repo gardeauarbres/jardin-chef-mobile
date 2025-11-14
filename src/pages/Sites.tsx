@@ -11,6 +11,7 @@ import { SortableList, SortOption } from '@/components/SortableList';
 import { DateRangeFilter } from '@/components/DateFilter';
 import { Trash2, Plus, Search, Filter } from 'lucide-react';
 import MobileNav from '@/components/MobileNav';
+import { NavigationDialog } from '@/components/NavigationDialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,6 +41,7 @@ interface Site {
   clients?: {
     first_name: string;
     last_name: string;
+    address: string;
   };
 }
 
@@ -297,9 +299,24 @@ const Sites = () => {
                     <div className="flex-1">
                       <h3 className="font-semibold">{site.title}</h3>
                       <p className="text-sm text-muted-foreground">{getClientName(site)}</p>
+                      {site.clients?.address && (
+                        <p className="text-xs text-muted-foreground mt-1">{site.clients.address}</p>
+                      )}
                     </div>
                     <div className="flex items-start gap-2">
                       {getStatusBadge(site.status)}
+                      {site.clients?.address && (
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <NavigationDialog
+                            address={site.clients.address}
+                            title=""
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            showIcon={true}
+                          />
+                        </div>
+                      )}
                       <Button
                         size="icon"
                         variant="outline"

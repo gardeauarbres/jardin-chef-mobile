@@ -120,13 +120,14 @@ export function useSites() {
     async () => {
       if (!user) throw new Error('User not authenticated');
       
-      const { data, error } = await supabase
+      const { data, error} = await supabase
         .from('sites')
         .select(`
           *,
           clients (
             first_name,
-            last_name
+            last_name,
+            address
           )
         `)
         .eq('user_id', user.id)

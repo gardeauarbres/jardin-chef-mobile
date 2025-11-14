@@ -10,6 +10,7 @@ import { Pagination } from '@/components/Pagination';
 import { SortableList, SortOption } from '@/components/SortableList';
 import { DateRangeFilter } from '@/components/DateFilter';
 import MobileNav from '@/components/MobileNav';
+import { NavigationDialog } from '@/components/NavigationDialog';
 import { useNavigate } from 'react-router-dom';
 import {
   AlertDialog,
@@ -541,6 +542,16 @@ const Clients = () => {
                           <p className="text-sm text-muted-foreground mt-1">{client.address}</p>
                         </div>
                         <div className="flex gap-2">
+                          <div onClick={(e) => e.stopPropagation()}>
+                            <NavigationDialog
+                              address={client.address}
+                              title=""
+                              variant="outline"
+                              size="icon"
+                              className="hover:bg-primary hover:text-primary-foreground transition-colors"
+                              showIcon={true}
+                            />
+                          </div>
                           <Button
                             size="icon"
                             variant="outline"
