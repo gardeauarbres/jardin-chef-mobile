@@ -65,12 +65,10 @@ Jardin Chef <gard.eau.arbres@gmail.com>
 
 **Pour la production (domaine vérifié)** :
 ```
-Jardin Chef <noreply@votre-domaine.com>
+Jardin Chef <chantiers@gardeauarbres.fr>
 ```
-ou
-```
-Jardin Chef <factures@votre-domaine.com>
-```
+
+> **Note** : Assurez-vous que le domaine `gardeauarbres.fr` est vérifié dans Resend pour pouvoir envoyer à n'importe quelle adresse email.
 
 ## Étapes après configuration
 

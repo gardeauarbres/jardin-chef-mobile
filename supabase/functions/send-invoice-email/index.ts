@@ -3,7 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 const RESEND_API_URL = 'https://api.resend.com/emails'
-const RESEND_FROM_EMAIL = Deno.env.get('RESEND_FROM_EMAIL') || 'Jardin Chef <onboarding@resend.dev>'
+const RESEND_FROM_EMAIL = Deno.env.get('RESEND_FROM_EMAIL') || 'Jardin Chef <chantiers@gardeauarbres.fr>'
 
 // Variables Supabase - doivent être configurées comme secrets dans Supabase
 const SUPABASE_URL = Deno.env.get('RESEND_SUPABASE_URL') || Deno.env.get('SUPABASE_URL') || ''
