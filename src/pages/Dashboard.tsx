@@ -688,23 +688,25 @@ const Dashboard = () => {
 
         {/* Statistiques avancées */}
         {!hiddenCards.has('advanced-stats') && (
-          <div className="relative">
+          <Card className="relative">
             <Button
               variant="ghost"
               size="icon"
-              className="absolute top-2 right-2 h-8 w-8 opacity-60 hover:opacity-100 z-10"
+              className="absolute top-4 right-4 h-8 w-8 opacity-60 hover:opacity-100 z-20"
               onClick={() => toggleCard('advanced-stats')}
             >
               <X className="h-4 w-4" />
             </Button>
-            <AdvancedStats
-              invoices={invoices}
-              quotes={quotes}
-              sites={sites}
-              payments={payments}
-              clients={clients}
-            />
-          </div>
+            <CardContent className="pt-6">
+              <AdvancedStats
+                invoices={invoices}
+                quotes={quotes}
+                sites={sites}
+                payments={payments}
+                clients={clients}
+              />
+            </CardContent>
+          </Card>
         )}
       </div>
 

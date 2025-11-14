@@ -231,9 +231,9 @@ export const AdvancedStats = ({ invoices, quotes, sites, payments, clients }: Ad
   return (
     <div className="space-y-4">
       {/* En-tête avec filtres */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pr-10">
         <h2 className="text-2xl font-bold">Statistiques avancées</h2>
-        <div className="flex gap-2">
+        <div className="flex gap-2 mr-4">
           <Button
             variant={period === '6months' ? 'default' : 'outline'}
             size="sm"
