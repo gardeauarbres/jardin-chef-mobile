@@ -628,9 +628,9 @@ const Employees = () => {
                       </div>
                       {!isSelectMode && (
                         <Button
-                          size="icon"
+                          size="sm"
                           variant="default"
-                          className="h-8 w-8"
+                          className="h-8 px-2"
                           onClick={(e) => {
                             e.stopPropagation();
                             exportEmployeePayrollToPDF({
@@ -650,7 +650,8 @@ const Employees = () => {
                           }}
                           title="Télécharger la fiche de paie"
                         >
-                          <Download className="h-4 w-4" />
+                          <Download className="h-3 w-3 mr-1" />
+                          PDF
                         </Button>
                       )}
                       <Button
