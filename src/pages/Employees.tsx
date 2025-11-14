@@ -626,14 +626,13 @@ const Employees = () => {
                         <div className="text-sm font-medium">{stats.totalHours}h</div>
                         <div className="text-xs text-warning font-medium">{stats.totalDue}€ dû</div>
                       </div>
-                      {isSelectMode && (
+                      {isSelectMode ? (
                         <Checkbox
                           checked={selectedEmployees.has(employee.id)}
                           onCheckedChange={() => toggleEmployeeSelection(employee.id)}
                           onClick={(e) => e.stopPropagation()}
                         />
-                      )}
-                      {!isSelectMode && (
+                      ) : (
                         <div className="flex items-center gap-2 flex-shrink-0">
                           <Button
                             size="sm"
