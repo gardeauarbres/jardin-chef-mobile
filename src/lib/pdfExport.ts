@@ -588,7 +588,8 @@ export const exportEmployeePayrollToPDF = (employee: EmployeePayrollData, userNa
   yPos += 6;
   doc.setFontSize(10);
   doc.setTextColor(...grayColor);
-  doc.text(`Taux horaire: ${employee.hourly_rate.toFixed(2)} €/h`, 20, yPos);
+  const hourlyRate = Number(employee.hourly_rate) || 0;
+  doc.text(`Taux horaire: ${hourlyRate.toFixed(2)} €/h`, 20, yPos);
   
   // Informations à droite
   const rightX = 120;
@@ -670,9 +671,11 @@ export const exportEmployeePayrollToPDF = (employee: EmployeePayrollData, userNa
       doc.setFont('helvetica', 'normal');
     }
     
-    const date = new Date(timesheet.date);
-    const hours = timesheet.hours;
-    const amount = hours * employee.hourly_rate;
+    // Vérifier et nettoyer les données
+    const date = timesheet.date ? new Date(timesheet.date) : new Date();
+    const hours = Number(timesheet.hours) || 0;
+    const hourlyRate = Number(employee.hourly_rate) || 0;
+    const amount = hours * hourlyRate;
     const status = timesheet.status === 'paid' ? 'Payé' : 'À payer';
     
     totalHours += hours;
@@ -688,10 +691,17 @@ export const exportEmployeePayrollToPDF = (employee: EmployeePayrollData, userNa
     
     yPos += 6;
     doc.setTextColor(...textColor);
-    doc.text(date.toLocaleDateString('fr-FR'), 25, yPos);
+    
+    // Sécuriser l'affichage des données
+    try {
+      doc.text(date.toLocaleDateString('fr-FR'), 25, yPos);
+    } catch {
+      doc.text('Date invalide', 25, yPos);
+    }
+    
     doc.text(`${hours.toFixed(2)}h`, 70, yPos);
     doc.text(`${amount.toFixed(2)} €`, 110, yPos);
-    doc.setTextColor(timesheet.status === 'paid' ? [34, 197, 94] : [234, 179, 8]);
+    doc.setTextColor(timesheet.status === 'paid' ? 34 : 234, timesheet.status === 'paid' ? 197 : 179, timesheet.status === 'paid' ? 94 : 8);
     doc.text(status, 150, yPos);
   });
   
@@ -713,25 +723,26 @@ export const exportEmployeePayrollToPDF = (employee: EmployeePayrollData, userNa
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...textColor);
   doc.text('Total heures travaillées:', 30, yPos);
-  doc.text(`${totalHours.toFixed(2)}h`, 150, yPos, { align: 'right' });
+  doc.text(`${(totalHours || 0).toFixed(2)}h`, 150, yPos, { align: 'right' });
   
   yPos += 8;
   doc.text('Montant total payé:', 30, yPos);
   doc.setTextColor(34, 197, 94); // Vert pour payé
-  doc.text(`${totalPaid.toFixed(2)} €`, 150, yPos, { align: 'right' });
+  doc.text(`${(totalPaid || 0).toFixed(2)} €`, 150, yPos, { align: 'right' });
   
   yPos += 8;
   doc.setTextColor(...textColor);
   doc.text('Montant total à payer:', 30, yPos);
   doc.setTextColor(234, 179, 8); // Jaune/Orange pour à payer
-  doc.text(`${totalDue.toFixed(2)} €`, 150, yPos, { align: 'right' });
+  doc.text(`${(totalDue || 0).toFixed(2)} €`, 150, yPos, { align: 'right' });
   
   yPos += 8;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.setTextColor(...textColor);
   doc.text('Montant total:', 30, yPos);
-  doc.text(`${(totalPaid + totalDue).toFixed(2)} €`, 150, yPos, { align: 'right' });
+  const totalGeneral = (totalPaid || 0) + (totalDue || 0);
+  doc.text(`${totalGeneral.toFixed(2)} €`, 150, yPos, { align: 'right' });
   
   yPos += 15;
   
