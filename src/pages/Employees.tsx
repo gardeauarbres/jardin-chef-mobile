@@ -626,10 +626,55 @@ const Employees = () => {
                         <div className="text-sm font-medium">{stats.totalHours}h</div>
                         <div className="text-xs text-warning font-medium">{stats.totalDue}€ dû</div>
                       </div>
+                      {!isSelectMode && (
+                        <Button
+                          size="icon"
+                          variant="default"
+                          className="h-8 w-8"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            exportEmployeePayrollToPDF({
+                              id: employee.id,
+                              first_name: employee.first_name,
+                              last_name: employee.last_name,
+                              hourly_rate: employee.hourly_rate,
+                              timesheets: empTimesheets.map(ts => ({
+                                id: ts.id,
+                                date: ts.date,
+                                hours: ts.hours,
+                                status: ts.status,
+                                paid_date: ts.paid_date,
+                              })),
+                            });
+                            toast.success('Fiche de paie générée');
+                          }}
+                          title="Télécharger la fiche de paie"
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      )}
                       <Button
                         size="icon"
                         variant="outline"
-                        className="hover:bg-primary hover:text-primary-foreground transition-all h-8 w-8"
+                        className="opacity-0 group-hover:opacity-100 hover:bg-destructive hover:text-destructive-foreground transition-all h-8 w-8"
+                        onClick={(e) => handleDeleteEmployee(employee.id, e)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                
+                {isExpanded && (
+                  <CardContent className="pt-0 space-y-2">
+                    <div className="flex items-center justify-between border-t pt-2 pb-2">
+                      <div className="text-xs text-muted-foreground">
+                        Historique des heures :
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="default"
+                        className="h-7"
                         onClick={(e) => {
                           e.stopPropagation();
                           exportEmployeePayrollToPDF({
@@ -647,26 +692,10 @@ const Employees = () => {
                           });
                           toast.success('Fiche de paie générée');
                         }}
-                        title="Télécharger la fiche de paie"
                       >
-                        <Download className="h-4 w-4" />
+                        <Download className="h-3 w-3 mr-1" />
+                        Télécharger PDF
                       </Button>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="opacity-0 group-hover:opacity-100 hover:bg-destructive hover:text-destructive-foreground transition-all h-8 w-8"
-                        onClick={(e) => handleDeleteEmployee(employee.id, e)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                
-                {isExpanded && (
-                  <CardContent className="pt-0 space-y-2">
-                    <div className="text-xs text-muted-foreground border-t pt-2">
-                      Historique des heures :
                     </div>
                     {empTimesheets.length === 0 ? (
                       <p className="text-xs text-muted-foreground">Aucune heure enregistrée</p>
