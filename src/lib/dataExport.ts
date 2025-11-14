@@ -17,27 +17,34 @@ export function exportToExcel<T extends Record<string, any>>(
     throw new Error('Aucune donnée à exporter');
   }
 
-  // Créer un nouveau workbook
-  const wb = XLSX.utils.book_new();
+  try {
+    // Créer un nouveau workbook
+    const wb = XLSX.utils.book_new();
 
-  // Convertir les données en worksheet
-  const ws = XLSX.utils.json_to_sheet(data);
+    // Convertir les données en worksheet
+    const ws = XLSX.utils.json_to_sheet(data);
 
-  // Ajuster la largeur des colonnes
-  const colWidths = Object.keys(data[0]).map((key) => {
-    const maxLength = Math.max(
-      key.length,
-      ...data.map((row) => String(row[key] || '').length)
-    );
-    return { wch: Math.min(maxLength + 2, 50) };
-  });
-  ws['!cols'] = colWidths;
+    // Ajuster la largeur des colonnes
+    if (data.length > 0 && Object.keys(data[0]).length > 0) {
+      const colWidths = Object.keys(data[0]).map((key) => {
+        const maxLength = Math.max(
+          key.length,
+          ...data.map((row) => String(row[key] || '').length)
+        );
+        return { wch: Math.min(maxLength + 2, 50) };
+      });
+      ws['!cols'] = colWidths;
+    }
 
-  // Ajouter le worksheet au workbook
-  XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    // Ajouter le worksheet au workbook
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
 
-  // Télécharger le fichier
-  XLSX.writeFile(wb, `${filename}.xlsx`);
+    // Télécharger le fichier
+    XLSX.writeFile(wb, `${filename}.xlsx`);
+  } catch (error) {
+    console.error('Erreur lors de l\'export Excel:', error);
+    throw new Error(`Erreur lors de l'export Excel: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+  }
 }
 
 /**
