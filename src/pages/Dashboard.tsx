@@ -17,6 +17,7 @@ import { AIAssistant } from '@/components/AIAssistant';
 import { GlobalSearch } from '@/components/GlobalSearch';
 import { DataExport } from '@/components/DataExport';
 import { Notifications } from '@/components/Notifications';
+import { AdvancedStats } from '@/components/AdvancedStats';
 import { exportEmployeePayrollToPDF } from '@/lib/pdfExport';
 import { exportInvoiceToPDF } from '@/lib/pdfExport';
 import { toast } from 'sonner';
@@ -683,6 +684,27 @@ const Dashboard = () => {
             </p>
           </CardContent>
           </Card>
+        )}
+
+        {/* Statistiques avancées */}
+        {!hiddenCards.has('advanced-stats') && (
+          <div className="relative">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 right-2 h-8 w-8 opacity-60 hover:opacity-100 z-10"
+              onClick={() => toggleCard('advanced-stats')}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+            <AdvancedStats
+              invoices={invoices}
+              quotes={quotes}
+              sites={sites}
+              payments={payments}
+              clients={clients}
+            />
+          </div>
         )}
       </div>
 
