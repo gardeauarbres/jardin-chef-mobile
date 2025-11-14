@@ -5,6 +5,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 const RESEND_API_URL = 'https://api.resend.com/emails'
 
+// Variables Supabase - doivent être configurées comme secrets dans Supabase
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
+const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || ''
+
 interface EmailRequest {
   to: string
   invoiceNumber: string
@@ -57,10 +61,28 @@ serve(async (req) => {
       )
     }
 
+    // Vérifier que les variables Supabase sont disponibles
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      console.error('Variables Supabase manquantes:', {
+        SUPABASE_URL: SUPABASE_URL ? 'définie' : 'manquante',
+        SUPABASE_ANON_KEY: SUPABASE_ANON_KEY ? 'définie' : 'manquante',
+      })
+      return new Response(
+        JSON.stringify({ error: 'Configuration Supabase manquante' }),
+        {
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+        }
+      )
+    }
+
     // Créer le client Supabase
     const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY,
       {
         global: {
           headers: { Authorization: authHeader },
@@ -75,8 +97,16 @@ serve(async (req) => {
     } = await supabaseClient.auth.getUser()
 
     if (authError || !user) {
+      console.error('Erreur d\'authentification:', {
+        error: authError,
+        hasUser: !!user,
+        authHeaderPrefix: authHeader?.substring(0, 20) + '...',
+      })
       return new Response(
-        JSON.stringify({ error: 'Non autorisé' }),
+        JSON.stringify({ 
+          error: 'Non autorisé',
+          details: authError?.message || 'Token invalide ou expiré'
+        }),
         {
           status: 401,
           headers: {
@@ -232,9 +262,11 @@ serve(async (req) => {
       }
     )
   } catch (error) {
+    console.error('Erreur dans la fonction Edge:', error)
     return new Response(
       JSON.stringify({
         error: error instanceof Error ? error.message : 'Erreur inconnue',
+        details: error instanceof Error ? error.stack : undefined,
       }),
       {
         status: 500,
