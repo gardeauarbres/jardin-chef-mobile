@@ -51,24 +51,32 @@ export function exportToCSV<T extends Record<string, any>>(
     throw new Error('Aucune donnée à exporter');
   }
 
-  // Créer un workbook temporaire
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(data);
-  XLSX.utils.book_append_sheet(wb, ws, 'Données');
+  try {
+    // Créer un workbook temporaire
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(data);
+    XLSX.utils.book_append_sheet(wb, ws, 'Données');
 
-  // Convertir en CSV
-  const csv = XLSX.utils.sheet_to_csv(ws);
+    // Convertir en CSV
+    const csv = XLSX.utils.sheet_to_csv(ws);
 
-  // Créer un blob et télécharger
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  const url = URL.createObjectURL(blob);
-  link.setAttribute('href', url);
-  link.setAttribute('download', `${filename}.csv`);
-  link.style.visibility = 'hidden';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+    // Créer un blob et télécharger
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${filename}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Nettoyer l'URL après un court délai
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+  } catch (error) {
+    console.error('Erreur lors de l\'export CSV:', error);
+    throw new Error(`Erreur lors de l'export CSV: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+  }
 }
 
 /**
@@ -98,7 +106,7 @@ export function exportClients(
       : '',
   }));
 
-  const filename = `clients_${format(new Date(), 'yyyy-MM-dd')}`;
+  const filename = `clients_${format(new Date(), 'yyyy-MM-dd', { locale: fr })}`;
 
   if (format === 'excel') {
     exportToExcel(exportData, filename, 'Clients');
@@ -146,7 +154,7 @@ export function exportQuotes(
     }),
   }));
 
-  const filename = `devis_${format(new Date(), 'yyyy-MM-dd')}`;
+  const filename = `devis_${format(new Date(), 'yyyy-MM-dd', { locale: fr })}`;
 
   if (format === 'excel') {
     exportToExcel(exportData, filename, 'Devis');
@@ -216,7 +224,7 @@ export function exportInvoices(
       : '',
   }));
 
-  const filename = `factures_${format(new Date(), 'yyyy-MM-dd')}`;
+  const filename = `factures_${format(new Date(), 'yyyy-MM-dd', { locale: fr })}`;
 
   if (format === 'excel') {
     exportToExcel(exportData, filename, 'Factures');
