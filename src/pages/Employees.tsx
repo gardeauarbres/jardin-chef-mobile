@@ -630,7 +630,7 @@ const Employees = () => {
                         <Button
                           size="sm"
                           variant="default"
-                          className="h-8 px-2"
+                          className="h-8 px-3 bg-primary text-primary-foreground hover:bg-primary/90"
                           onClick={(e) => {
                             e.stopPropagation();
                             exportEmployeePayrollToPDF({
@@ -650,18 +650,23 @@ const Employees = () => {
                           }}
                           title="Télécharger la fiche de paie"
                         >
-                          <Download className="h-3 w-3 mr-1" />
+                          <Download className="h-4 w-4 mr-1.5" />
                           PDF
                         </Button>
                       )}
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="opacity-0 group-hover:opacity-100 hover:bg-destructive hover:text-destructive-foreground transition-all h-8 w-8"
-                        onClick={(e) => handleDeleteEmployee(employee.id, e)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {!isSelectMode && (
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          className="hover:bg-destructive hover:text-destructive-foreground transition-all h-8 w-8"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteEmployee(employee.id, e);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </CardHeader>
