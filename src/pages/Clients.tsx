@@ -29,6 +29,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useInvoices, useSendInvoiceEmail } from '@/hooks/useInvoices';
 import { exportInvoiceToPDF } from '@/lib/pdfExport';
 import { exportClients } from '@/lib/dataExport';
+import { useCompanyProfile } from '@/hooks/useCompanyProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale/fr';
@@ -79,6 +80,10 @@ const Clients = () => {
   const { data: allInvoices = [] } = useInvoices();
   const sendEmailMutation = useSendInvoiceEmail();
   const queryClient = useQueryClient();
+  const { data: companyProfile } = useCompanyProfile();
+  
+  // Récupérer le nom de l'utilisateur
+  const userName = user?.email?.split('@')[0] || 'Utilisateur';
 
   // Mutation optimisée pour la suppression
   const deleteMutation = useSupabaseMutation(
@@ -185,27 +190,31 @@ const Clients = () => {
   // Télécharger une facture
   const handleDownloadInvoice = (invoice: any, e: React.MouseEvent) => {
     e.stopPropagation();
-    exportInvoiceToPDF({
-      id: invoice.id,
-      invoice_number: invoice.invoice_number,
-      title: invoice.title,
-      description: invoice.description || undefined,
-      amount: invoice.amount,
-      tax_rate: invoice.tax_rate || undefined,
-      tax_amount: invoice.tax_amount,
-      total_amount: invoice.total_amount,
-      issue_date: invoice.issue_date,
-      due_date: invoice.due_date,
-      status: invoice.status,
-      client: invoice.clients
-        ? {
-            first_name: invoice.clients.first_name,
-            last_name: invoice.clients.last_name,
-            email: invoice.clients.email,
-            address: invoice.clients.address,
-          }
-        : undefined,
-    });
+    exportInvoiceToPDF(
+      {
+        id: invoice.id,
+        invoice_number: invoice.invoice_number,
+        title: invoice.title,
+        description: invoice.description || undefined,
+        amount: invoice.amount,
+        tax_rate: invoice.tax_rate || undefined,
+        tax_amount: invoice.tax_amount,
+        total_amount: invoice.total_amount,
+        issue_date: invoice.issue_date,
+        due_date: invoice.due_date,
+        status: invoice.status,
+        client: invoice.clients
+          ? {
+              first_name: invoice.clients.first_name,
+              last_name: invoice.clients.last_name,
+              email: invoice.clients.email,
+              address: invoice.clients.address,
+            }
+          : undefined,
+      },
+      userName,
+      companyProfile || undefined
+    );
     toast.success('Facture exportée en PDF');
   };
 

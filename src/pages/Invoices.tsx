@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Trash2, Search, Filter, Download, Mail, FileText, FileSpreadsheet, Upload, CheckSquare, Square } from 'lucide-react';
 import { exportInvoiceToPDF } from '@/lib/pdfExport';
 import { exportInvoices } from '@/lib/dataExport';
+import { useCompanyProfile } from '@/hooks/useCompanyProfile';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -71,6 +72,7 @@ export default function Invoices() {
   const { data: invoices, isLoading } = useInvoices();
   const deleteMutation = useInvoiceDelete();
   const sendEmailMutation = useSendInvoiceEmail();
+  const { data: companyProfile } = useCompanyProfile();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -84,6 +86,9 @@ export default function Invoices() {
   const [selectedInvoices, setSelectedInvoices] = useState<Set<string>>(new Set());
   const [isSelectMode, setIsSelectMode] = useState(false);
   const queryClient = useQueryClient();
+  
+  // Récupérer le nom de l'utilisateur
+  const userName = user?.email?.split('@')[0] || 'Utilisateur';
 
   // Filtrer et trier les factures
   const filteredAndSortedInvoices = useMemo(() => {
@@ -176,27 +181,31 @@ export default function Invoices() {
   };
 
   const handleExportPDF = (invoice: InvoiceWithRelations) => {
-    exportInvoiceToPDF({
-      id: invoice.id,
-      invoice_number: invoice.invoice_number,
-      title: invoice.title,
-      description: invoice.description || undefined,
-      amount: invoice.amount,
-      tax_rate: invoice.tax_rate || undefined,
-      tax_amount: invoice.tax_amount,
-      total_amount: invoice.total_amount,
-      issue_date: invoice.issue_date,
-      due_date: invoice.due_date,
-      status: invoice.status,
-      client: invoice.clients
-        ? {
-            first_name: invoice.clients.first_name,
-            last_name: invoice.clients.last_name,
-            email: invoice.clients.email,
-            address: invoice.clients.address,
-          }
-        : undefined,
-    });
+    exportInvoiceToPDF(
+      {
+        id: invoice.id,
+        invoice_number: invoice.invoice_number,
+        title: invoice.title,
+        description: invoice.description || undefined,
+        amount: invoice.amount,
+        tax_rate: invoice.tax_rate || undefined,
+        tax_amount: invoice.tax_amount,
+        total_amount: invoice.total_amount,
+        issue_date: invoice.issue_date,
+        due_date: invoice.due_date,
+        status: invoice.status,
+        client: invoice.clients
+          ? {
+              first_name: invoice.clients.first_name,
+              last_name: invoice.clients.last_name,
+              email: invoice.clients.email,
+              address: invoice.clients.address,
+            }
+          : undefined,
+      },
+      userName,
+      companyProfile || undefined
+    );
     toast.success('Facture exportée en PDF');
   };
 
