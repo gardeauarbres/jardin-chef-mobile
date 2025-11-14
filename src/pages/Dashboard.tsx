@@ -258,6 +258,27 @@ const Dashboard = () => {
     };
   }, [employees, timesheets, invoices]);
 
+  // Fonctions pour gérer les cartes masquées
+  const toggleCard = (cardId: string) => {
+    setHiddenCards(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(cardId)) {
+        newSet.delete(cardId);
+      } else {
+        newSet.add(cardId);
+      }
+      // Sauvegarder dans localStorage
+      localStorage.setItem('dashboard-hidden-cards', JSON.stringify([...newSet]));
+      return newSet;
+    });
+  };
+
+  const showAllCards = () => {
+    setHiddenCards(new Set());
+    localStorage.removeItem('dashboard-hidden-cards');
+    toast.success('Toutes les cartes sont affichées');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background pb-20">
