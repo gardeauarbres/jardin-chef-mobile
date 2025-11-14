@@ -46,7 +46,13 @@ const queryClient = new QueryClient({
       staleTime: 1000 * 60 * 5, // 5 minutes - les données sont considérées fraîches pendant 5 min
       gcTime: 1000 * 60 * 10, // 10 minutes - cache garbage collection (anciennement cacheTime)
       refetchOnWindowFocus: false, // Ne pas refetch automatiquement au focus
+      refetchOnMount: false, // Ne pas refetch si les données sont fraîches
+      refetchOnReconnect: false, // Ne pas refetch automatiquement lors de la reconnexion
       retry: 1, // Réessayer seulement 1 fois en cas d'erreur
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Délai exponentiel
+    },
+    mutations: {
+      retry: 0, // Ne pas réessayer les mutations par défaut
     },
   },
 });

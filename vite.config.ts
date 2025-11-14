@@ -34,6 +34,10 @@ export default defineConfig(({ mode }) => ({
       },
     },
     chunkSizeWarningLimit: 1000, // Augmenter la limite pour les chunks plus gros
-    sourcemap: mode === 'development', // Activer les sourcemaps en développement pour le débogage
+    sourcemap: mode === 'development', // Activer les sourcemaps en développement uniquement
+    minify: 'esbuild', // Utiliser esbuild pour une minification plus rapide
+    target: 'es2020', // Target moderne pour un bundle plus petit
+    cssCodeSplit: true, // Séparer le CSS par chunk
+    assetsInlineLimit: 4096, // Inline assets < 4KB en base64
   },
 }));
