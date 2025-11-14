@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Trash2, Search, Filter, Download, FileText, FileSpreadsheet } from 'lucide-react';
+import { Plus, Trash2, Search, Filter, Download, FileText, FileSpreadsheet, Upload, CheckSquare, Square } from 'lucide-react';
 import { exportQuoteToPDF } from '@/lib/pdfExport';
 import { exportQuotes } from '@/lib/dataExport';
 import { InvoiceForm } from '@/components/InvoiceForm';
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   DropdownMenu,
@@ -31,7 +32,9 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { exportQuotes } from '@/lib/dataExport';
 
 interface Quote {
   id: string;
@@ -60,6 +63,9 @@ const Quotes = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
+  const [selectedQuotes, setSelectedQuotes] = useState<Set<string>>(new Set());
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -175,6 +181,77 @@ const Quotes = () => {
     setQuoteToDelete(null);
   };
 
+  // Gestion de la sélection
+  const toggleSelectMode = () => {
+    setIsSelectMode(!isSelectMode);
+    if (isSelectMode) {
+      setSelectedQuotes(new Set());
+    }
+  };
+
+  const toggleQuoteSelection = (quoteId: string) => {
+    const newSelection = new Set(selectedQuotes);
+    if (newSelection.has(quoteId)) {
+      newSelection.delete(quoteId);
+    } else {
+      newSelection.add(quoteId);
+    }
+    setSelectedQuotes(newSelection);
+  };
+
+  const selectAllQuotes = () => {
+    setSelectedQuotes(new Set(filteredQuotes.map(q => q.id)));
+  };
+
+  const deselectAllQuotes = () => {
+    setSelectedQuotes(new Set());
+  };
+
+  const handleExportSelected = (format: 'excel' | 'csv') => {
+    if (selectedQuotes.size === 0) {
+      toast.error('Veuillez sélectionner au moins un devis');
+      return;
+    }
+
+    const selectedQuotesData = filteredQuotes.filter(q => selectedQuotes.has(q.id));
+    try {
+      if (format === 'excel') {
+        exportQuotes(selectedQuotesData, 'excel');
+        toast.success(`${selectedQuotes.size} devis exporté(s) en Excel`);
+      } else {
+        exportQuotes(selectedQuotesData, 'csv');
+        toast.success(`${selectedQuotes.size} devis exporté(s) en CSV`);
+      }
+      setIsSelectMode(false);
+      setSelectedQuotes(new Set());
+    } catch (error) {
+      toast.error('Erreur lors de l\'export');
+    }
+  };
+
+  const handleImportFile = async (file: File) => {
+    if (!user) {
+      toast.error('Vous devez être connecté pour importer');
+      return;
+    }
+
+    if (!confirm(`Voulez-vous importer les devis depuis "${file.name}" ?`)) {
+      return;
+    }
+
+    try {
+      const { importQuotes } = await import('@/lib/dataImport');
+      await importQuotes(file, user.id);
+      
+      queryClient.invalidateQueries({ queryKey: ['quotes', user.id] });
+      fetchQuotes();
+      
+      toast.success('Import réussi');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de l\'import');
+    }
+  };
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Chargement...</div>;
   }
@@ -213,36 +290,87 @@ const Quotes = () => {
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon" title="Exporter les données">
+                  <Button variant="outline" size="icon" title="Exporter/Importer les données">
                     <FileSpreadsheet className="h-5 w-5" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onClick={() => {
-                      try {
-                        exportQuotes(filteredQuotes, 'excel');
-                        toast.success('Export Excel réussi');
-                      } catch (error) {
-                        toast.error('Erreur lors de l\'export');
-                      }
-                    }}
-                  >
-                    <FileSpreadsheet className="h-4 w-4 mr-2" />
-                    Exporter en Excel
+                  <DropdownMenuItem onClick={toggleSelectMode}>
+                    {isSelectMode ? (
+                      <>
+                        <Square className="h-4 w-4 mr-2" />
+                        Désactiver la sélection
+                      </>
+                    ) : (
+                      <>
+                        <CheckSquare className="h-4 w-4 mr-2" />
+                        Sélectionner pour exporter
+                      </>
+                    )}
                   </DropdownMenuItem>
+                  {isSelectMode && (
+                    <>
+                      <DropdownMenuItem onClick={selectAllQuotes}>
+                        <CheckSquare className="h-4 w-4 mr-2" />
+                        Tout sélectionner
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={deselectAllQuotes}>
+                        <Square className="h-4 w-4 mr-2" />
+                        Tout désélectionner
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleExportSelected('excel')}
+                        disabled={selectedQuotes.size === 0}
+                      >
+                        <FileSpreadsheet className="h-4 w-4 mr-2" />
+                        Exporter sélection ({selectedQuotes.size})
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  {!isSelectMode && (
+                    <>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          try {
+                            exportQuotes(filteredQuotes, 'excel');
+                            toast.success('Export Excel réussi');
+                          } catch (error) {
+                            toast.error('Erreur lors de l\'export');
+                          }
+                        }}
+                      >
+                        <FileSpreadsheet className="h-4 w-4 mr-2" />
+                        Exporter tout en Excel
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          try {
+                            exportQuotes(filteredQuotes, 'csv');
+                            toast.success('Export CSV réussi');
+                          } catch (error) {
+                            toast.error('Erreur lors de l\'export');
+                          }
+                        }}
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        Exporter tout en CSV
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   <DropdownMenuItem
                     onClick={() => {
-                      try {
-                        exportQuotes(filteredQuotes, 'csv');
-                        toast.success('Export CSV réussi');
-                      } catch (error) {
-                        toast.error('Erreur lors de l\'export');
-                      }
+                      const input = document.createElement('input');
+                      input.type = 'file';
+                      input.accept = '.xlsx,.xls,.csv';
+                      input.onchange = (e) => {
+                        const file = (e.target as HTMLInputElement).files?.[0];
+                        if (file) handleImportFile(file);
+                      };
+                      input.click();
                     }}
                   >
-                    <FileText className="h-4 w-4 mr-2" />
-                    Exporter en CSV
+                    <Upload className="h-4 w-4 mr-2" />
+                    Importer depuis Excel/CSV
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -260,6 +388,31 @@ const Quotes = () => {
                 </SelectContent>
               </Select>
             </div>
+            {isSelectMode && selectedQuotes.size > 0 && (
+              <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 flex items-center justify-between">
+                <span className="text-sm font-medium">
+                  {selectedQuotes.size} devis sélectionné{selectedQuotes.size > 1 ? 's' : ''}
+                </span>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleExportSelected('excel')}
+                  >
+                    <FileSpreadsheet className="h-4 w-4 mr-2" />
+                    Exporter en Excel
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleExportSelected('csv')}
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Exporter en CSV
+                  </Button>
+                </div>
+              </div>
+            )}
             <div className="flex gap-2 flex-wrap">
               <DateRangeFilter
                 startDate={startDate}
@@ -314,6 +467,14 @@ const Quotes = () => {
             <Card key={quote.id} className="group cursor-pointer hover:shadow-glow hover:scale-[1.02] transition-all duration-200 animate-fade-in">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-2">
+                  {isSelectMode && (
+                    <div className="mr-3 mt-1" onClick={(e) => e.stopPropagation()}>
+                      <Checkbox
+                        checked={selectedQuotes.has(quote.id)}
+                        onCheckedChange={() => toggleQuoteSelection(quote.id)}
+                      />
+                    </div>
+                  )}
                   <div className="flex-1">
                     <h3 className="font-semibold">{quote.title}</h3>
                     <p className="text-sm text-muted-foreground">

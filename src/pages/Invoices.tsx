@@ -1,12 +1,13 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Trash2, Search, Filter, Download, Mail, FileText, FileSpreadsheet } from 'lucide-react';
+import { Plus, Trash2, Search, Filter, Download, Mail, FileText, FileSpreadsheet, Upload, CheckSquare, Square } from 'lucide-react';
 import { exportInvoiceToPDF } from '@/lib/pdfExport';
 import { exportInvoices } from '@/lib/dataExport';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   DropdownMenu,
@@ -19,6 +20,7 @@ import { SortableList, SortOption } from '@/components/SortableList';
 import { DateRangeFilter } from '@/components/DateFilter';
 import MobileNav from '@/components/MobileNav';
 import { useAuth } from '@/hooks/useAuth';
+import { useQueryClient } from '@tanstack/react-query';
 import { useInvoices, useInvoiceDelete, useSendInvoiceEmail, InvoiceWithRelations } from '@/hooks/useInvoices';
 import { InvoiceForm } from '@/components/InvoiceForm';
 import {
@@ -79,6 +81,9 @@ export default function Invoices() {
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState<string>('created_at-desc');
+  const [selectedInvoices, setSelectedInvoices] = useState<Set<string>>(new Set());
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const queryClient = useQueryClient();
 
   // Filtrer et trier les factures
   const filteredAndSortedInvoices = useMemo(() => {
@@ -210,6 +215,54 @@ export default function Invoices() {
           ? error.message
           : 'Erreur lors de l\'envoi de l\'email'
       );
+    }
+  };
+
+  // Gestion de la sélection
+  const toggleSelectMode = () => {
+    setIsSelectMode(!isSelectMode);
+    if (isSelectMode) {
+      setSelectedInvoices(new Set());
+    }
+  };
+
+  const toggleInvoiceSelection = (invoiceId: string) => {
+    const newSelection = new Set(selectedInvoices);
+    if (newSelection.has(invoiceId)) {
+      newSelection.delete(invoiceId);
+    } else {
+      newSelection.add(invoiceId);
+    }
+    setSelectedInvoices(newSelection);
+  };
+
+  const selectAllInvoices = () => {
+    setSelectedInvoices(new Set(filteredAndSortedInvoices.map(i => i.id)));
+  };
+
+  const deselectAllInvoices = () => {
+    setSelectedInvoices(new Set());
+  };
+
+  const handleExportSelected = (format: 'excel' | 'csv') => {
+    if (selectedInvoices.size === 0) {
+      toast.error('Veuillez sélectionner au moins une facture');
+      return;
+    }
+
+    const selectedInvoicesData = filteredAndSortedInvoices.filter(i => selectedInvoices.has(i.id));
+    try {
+      if (format === 'excel') {
+        exportInvoices(selectedInvoicesData, 'excel');
+        toast.success(`${selectedInvoices.size} facture(s) exportée(s) en Excel`);
+      } else {
+        exportInvoices(selectedInvoicesData, 'csv');
+        toast.success(`${selectedInvoices.size} facture(s) exportée(s) en CSV`);
+      }
+      setIsSelectMode(false);
+      setSelectedInvoices(new Set());
+    } catch (error) {
+      toast.error('Erreur lors de l\'export');
     }
   };
 
@@ -403,6 +456,14 @@ export default function Invoices() {
                 <Card key={invoice.id} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-4">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      {isSelectMode && (
+                        <div className="mr-3" onClick={(e) => e.stopPropagation()}>
+                          <Checkbox
+                            checked={selectedInvoices.has(invoice.id)}
+                            onCheckedChange={() => toggleInvoiceSelection(invoice.id)}
+                          />
+                        </div>
+                      )}
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
                           <h3 className="font-semibold text-lg">{invoice.title}</h3>
