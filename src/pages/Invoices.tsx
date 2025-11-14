@@ -436,6 +436,32 @@ export default function Invoices() {
               </div>
             </div>
 
+            {isSelectMode && selectedInvoices.size > 0 && (
+              <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 flex items-center justify-between">
+                <span className="text-sm font-medium">
+                  {selectedInvoices.size} facture{selectedInvoices.size > 1 ? 's' : ''} sélectionnée{selectedInvoices.size > 1 ? 's' : ''}
+                </span>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleExportSelected('excel')}
+                  >
+                    <FileSpreadsheet className="h-4 w-4 mr-2" />
+                    Exporter en Excel
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleExportSelected('csv')}
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Exporter en CSV
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <div className="flex flex-col md:flex-row gap-4">
               {/* Temporairement désactivé pour debug */}
               {/* <DateRangeFilter
