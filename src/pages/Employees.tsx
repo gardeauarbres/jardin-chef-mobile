@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Plus, Euro, Clock, TrendingUp, Trash2, FileSpreadsheet, FileText, Upload, CheckSquare, Square, Download } from 'lucide-react';
 import MobileNav from '@/components/MobileNav';
 import { toast } from 'sonner';
@@ -329,7 +330,45 @@ const Employees = () => {
   };
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Chargement...</div>;
+    return (
+      <div className="min-h-screen bg-background pb-20">
+        <header className="bg-primary text-primary-foreground p-6">
+          <Skeleton className="h-8 w-48 bg-primary-foreground/20" />
+          <Skeleton className="h-4 w-32 mt-2 bg-primary-foreground/20" />
+        </header>
+        <div className="p-4 space-y-4">
+          {/* Stats skeleton */}
+          <div className="grid grid-cols-3 gap-4">
+            {[1, 2, 3].map((i) => (
+              <Card key={i}>
+                <CardContent className="p-4">
+                  <Skeleton className="h-8 w-8 mb-2 rounded-full" />
+                  <Skeleton className="h-4 w-16 mb-1" />
+                  <Skeleton className="h-6 w-12" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          {/* Employee cards skeleton */}
+          {[1, 2].map((i) => (
+            <Card key={i}>
+              <CardContent className="p-4">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex-1">
+                    <Skeleton className="h-6 w-48 mb-2" />
+                    <Skeleton className="h-4 w-24" />
+                  </div>
+                  <Skeleton className="h-8 w-20" />
+                </div>
+                <Skeleton className="h-4 w-full mb-2" />
+                <Skeleton className="h-24 w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <MobileNav />
+      </div>
+    );
   }
 
   if (!user) {

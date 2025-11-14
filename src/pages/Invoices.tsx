@@ -280,13 +280,35 @@ export default function Invoices() {
     return (
       <div className="min-h-screen bg-background pb-20">
         <header className="bg-primary text-primary-foreground p-6">
-          <Skeleton className="h-8 w-48 mb-2" />
-          <Skeleton className="h-4 w-64" />
+          <Skeleton className="h-8 w-48 mb-2 bg-primary-foreground/20" />
+          <Skeleton className="h-4 w-64 bg-primary-foreground/20" />
         </header>
         <div className="p-4 space-y-4">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-64 w-full" />
+          <div className="flex gap-2">
+            <Skeleton className="h-10 flex-1" />
+            <Skeleton className="h-10 w-24" />
+          </div>
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i}>
+              <CardContent className="p-4">
+                <div className="flex justify-between items-start mb-2">
+                  <Skeleton className="h-6 w-32" />
+                  <Skeleton className="h-6 w-24" />
+                </div>
+                <Skeleton className="h-4 w-48 mb-2" />
+                <Skeleton className="h-4 w-full mb-3" />
+                <div className="flex justify-between items-center">
+                  <Skeleton className="h-8 w-32" />
+                  <div className="flex gap-2">
+                    <Skeleton className="h-8 w-8" />
+                    <Skeleton className="h-8 w-8" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
+        <MobileNav />
       </div>
     );
   }
