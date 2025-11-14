@@ -13,6 +13,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -180,6 +181,9 @@ export function PhotoGallery({ siteId }: PhotoGalleryProps) {
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>{typeLabels[selectedPhoto?.type || 'other']}</DialogTitle>
+            <DialogDescription>
+              Visualisation de la photo du chantier
+            </DialogDescription>
           </DialogHeader>
           {selectedPhoto && (
             <div className="space-y-4">

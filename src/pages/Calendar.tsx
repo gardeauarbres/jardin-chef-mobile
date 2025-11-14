@@ -14,6 +14,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -124,6 +125,9 @@ export default function Calendar() {
                 </Badge>
               )}
             </DialogTitle>
+            <DialogDescription>
+              Détails de l'intervention planifiée
+            </DialogDescription>
           </DialogHeader>
           {selectedIntervention && (
             <div className="space-y-4">

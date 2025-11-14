@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Upload, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 
 interface PhotoUploadProps {
   siteId: string;
@@ -100,6 +100,9 @@ export function PhotoUpload({ siteId, onUploadSuccess }: PhotoUploadProps) {
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Ajouter une photo</DialogTitle>
+          <DialogDescription>
+            Téléchargez une photo pour ce chantier
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           {/* Preview */}

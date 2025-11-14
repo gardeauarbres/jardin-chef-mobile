@@ -12,6 +12,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
@@ -160,6 +161,9 @@ export function InterventionForm({
           <DialogTitle>
             {intervention ? 'Modifier l\'intervention' : 'Nouvelle intervention'}
           </DialogTitle>
+          <DialogDescription>
+            {intervention ? 'Modifiez les informations de l\'intervention' : 'Planifiez une nouvelle intervention pour ce chantier'}
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           {/* Chantier */}

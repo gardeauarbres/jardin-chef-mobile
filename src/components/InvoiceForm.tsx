@@ -11,6 +11,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
@@ -192,10 +193,10 @@ export function InvoiceForm({
           <DialogTitle>
             {invoice ? 'Modifier la facture' : 'Nouvelle facture'}
           </DialogTitle>
+          <DialogDescription>
+            {invoice ? 'Modifiez les informations de la facture' : 'Créez une nouvelle facture à partir d\'un devis accepté'}
+          </DialogDescription>
         </DialogHeader>
-        <div className="sr-only">
-          Formulaire de création ou modification de facture
-        </div>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           {/* Devis */}
           <div className="space-y-2">
