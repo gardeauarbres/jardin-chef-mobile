@@ -16,6 +16,7 @@ import { ThemeColorPicker } from '@/components/ThemeColorPicker';
 import { AIAssistant } from '@/components/AIAssistant';
 import { GlobalSearch } from '@/components/GlobalSearch';
 import { DataExport } from '@/components/DataExport';
+import { Notifications } from '@/components/Notifications';
 import { exportEmployeePayrollToPDF } from '@/lib/pdfExport';
 import { exportInvoiceToPDF } from '@/lib/pdfExport';
 import { toast } from 'sonner';
@@ -333,6 +334,7 @@ const Dashboard = () => {
                          <div className="hidden md:block">
                            <DataExport />
                          </div>
+                         <Notifications />
                          <AIAssistant />
                          <ThemeColorPicker />
                          <DropdownMenu>
