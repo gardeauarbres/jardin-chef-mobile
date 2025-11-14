@@ -204,19 +204,14 @@ const Dashboard = () => {
 
   // Documents à envoyer
   const documentsToSend = useMemo(() => {
-    // Fiches de paie à envoyer (employés avec timesheets non payés ou récents)
+    // Fiches de paie pour tous les employés avec timesheets
     const employeePayrolls = employees
       .map((employee: any) => {
         const empTimesheets = timesheets.filter((ts: any) => ts.employee_id === employee.id);
         const unpaidTimesheets = empTimesheets.filter((ts: any) => ts.status === 'due');
-        const recentTimesheets = empTimesheets.filter((ts: any) => {
-          const date = new Date(ts.date);
-          const thirtyDaysAgo = new Date();
-          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-          return date >= thirtyDaysAgo;
-        });
-
-        if (unpaidTimesheets.length > 0 || recentTimesheets.length > 0) {
+        
+        // Inclure tous les employés qui ont des timesheets
+        if (empTimesheets.length > 0) {
           return {
             type: 'employee' as const,
             id: employee.id,
@@ -230,12 +225,8 @@ const Dashboard = () => {
       })
       .filter(Boolean);
 
-    // Factures à envoyer (non payées ou récentes)
+    // Toutes les factures (pas seulement celles non payées)
     const invoicesToSend = invoices
-      .filter((invoice: InvoiceWithRelations) => {
-        // Factures non payées ou envoyées récemment
-        return invoice.status === 'draft' || invoice.status === 'sent' || invoice.status === 'overdue';
-      })
       .map((invoice: InvoiceWithRelations) => ({
         type: 'invoice' as const,
         id: invoice.id,
@@ -459,12 +450,12 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Fiches de paie pour les employés */}
-            {documentsToSend.employees.length > 0 && (
-              <div>
-                <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  Fiches de paie ({documentsToSend.employees.length})
-                </h3>
+            <div>
+              <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                <User className="h-4 w-4" />
+                Fiches de paie ({documentsToSend.employees.length})
+              </h3>
+              {documentsToSend.employees.length > 0 ? (
                 <div className="space-y-2">
                   {documentsToSend.employees.map((doc: any) => (
                     <div
@@ -511,16 +502,20 @@ const Dashboard = () => {
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
+              ) : (
+                <p className="text-muted-foreground text-xs py-2">
+                  Aucun employé avec des heures enregistrées
+                </p>
+              )}
+            </div>
 
             {/* Factures pour les clients */}
-            {documentsToSend.invoices.length > 0 && (
-              <div>
-                <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                  <Mail className="h-4 w-4" />
-                  Factures ({documentsToSend.invoices.length})
-                </h3>
+            <div>
+              <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                <Mail className="h-4 w-4" />
+                Factures ({documentsToSend.invoices.length})
+              </h3>
+              {documentsToSend.invoices.length > 0 ? (
                 <div className="space-y-2">
                   {documentsToSend.invoices.map((doc) => (
                     <div
@@ -532,7 +527,7 @@ const Dashboard = () => {
                           {doc.invoice.invoice_number} - {doc.clientName}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {doc.amount.toFixed(2)}€ • Échéance: {format(new Date(doc.dueDate), 'dd/MM/yyyy', { locale: fr })}
+                          {doc.amount.toFixed(2)}€ • Échéance: {format(new Date(doc.dueDate), 'dd/MM/yyyy', { locale: fr })} • {doc.status === 'paid' ? 'Payée' : doc.status === 'sent' ? 'Envoyée' : doc.status === 'draft' ? 'Brouillon' : doc.status === 'overdue' ? 'En retard' : 'Annulée'}
                         </p>
                       </div>
                       <Button
@@ -579,14 +574,12 @@ const Dashboard = () => {
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
-
-            {documentsToSend.employees.length === 0 && documentsToSend.invoices.length === 0 && (
-              <p className="text-muted-foreground text-sm text-center py-4">
-                Aucun document à envoyer pour le moment
-              </p>
-            )}
+              ) : (
+                <p className="text-muted-foreground text-xs py-2">
+                  Aucune facture disponible
+                </p>
+              )}
+            </div>
           </CardContent>
         </Card>
 
