@@ -621,51 +621,51 @@ const Employees = () => {
                         <p className="text-sm text-muted-foreground">{employee.hourly_rate}€/h</p>
                       </div>
                     </div>
-                    <div className="flex items-start gap-2">
+                    <div className="flex items-start gap-2 flex-shrink-0">
                       <div className="text-right">
                         <div className="text-sm font-medium">{stats.totalHours}h</div>
                         <div className="text-xs text-warning font-medium">{stats.totalDue}€ dû</div>
                       </div>
                       {!isSelectMode && (
-                        <Button
-                          size="sm"
-                          variant="default"
-                          className="h-8 px-3 bg-primary text-primary-foreground hover:bg-primary/90"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            exportEmployeePayrollToPDF({
-                              id: employee.id,
-                              first_name: employee.first_name,
-                              last_name: employee.last_name,
-                              hourly_rate: employee.hourly_rate,
-                              timesheets: empTimesheets.map(ts => ({
-                                id: ts.id,
-                                date: ts.date,
-                                hours: ts.hours,
-                                status: ts.status,
-                                paid_date: ts.paid_date,
-                              })),
-                            });
-                            toast.success('Fiche de paie générée');
-                          }}
-                          title="Télécharger la fiche de paie"
-                        >
-                          <Download className="h-4 w-4 mr-1.5" />
-                          PDF
-                        </Button>
-                      )}
-                      {!isSelectMode && (
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          className="hover:bg-destructive hover:text-destructive-foreground transition-all h-8 w-8"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteEmployee(employee.id, e);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <>
+                          <Button
+                            size="sm"
+                            variant="default"
+                            className="h-8 px-3 bg-primary text-primary-foreground hover:bg-primary/90 flex-shrink-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              exportEmployeePayrollToPDF({
+                                id: employee.id,
+                                first_name: employee.first_name,
+                                last_name: employee.last_name,
+                                hourly_rate: employee.hourly_rate,
+                                timesheets: empTimesheets.map(ts => ({
+                                  id: ts.id,
+                                  date: ts.date,
+                                  hours: ts.hours,
+                                  status: ts.status,
+                                  paid_date: ts.paid_date,
+                                })),
+                              });
+                              toast.success('Fiche de paie générée');
+                            }}
+                            title="Télécharger la fiche de paie"
+                          >
+                            <Download className="h-4 w-4 mr-1.5" />
+                            PDF
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="hover:bg-destructive hover:text-destructive-foreground transition-all h-8 w-8 flex-shrink-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteEmployee(employee.id, e);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
                       )}
                     </div>
                   </div>
