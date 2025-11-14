@@ -15,10 +15,12 @@ Les Edge Functions Supabase nécessitent que certaines variables soient configur
 
 2. **Ajoutez les deux secrets suivants** :
 
-   #### Secret 1 : `SUPABASE_URL`
-   - **Nom** : `SUPABASE_URL`
+   #### Secret 1 : `RESEND_SUPABASE_URL`
+   - **Nom** : `RESEND_SUPABASE_URL`
    - **Valeur** : `https://qppuntwgpglsbdppejhw.supabase.co`
    - Cliquez sur "Add secret"
+   
+   > **Note** : Si vous avez déjà créé `SUPABASE_URL`, vous pouvez aussi l'utiliser. La fonction essaiera d'abord `RESEND_SUPABASE_URL`, puis `SUPABASE_URL`.
 
    #### Secret 2 : `SUPABASE_ANON_KEY`
    - **Nom** : `SUPABASE_ANON_KEY`
@@ -56,6 +58,6 @@ Les logs afficheront maintenant des messages détaillés si les variables sont m
 
 ## Secrets à ajouter
 
-- ⚠️ `SUPABASE_URL` - URL de votre projet Supabase
+- ⚠️ `RESEND_SUPABASE_URL` (ou `SUPABASE_URL`) - URL de votre projet Supabase
 - ⚠️ `SUPABASE_ANON_KEY` - Clé publique Supabase (anon key)
 
