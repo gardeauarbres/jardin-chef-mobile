@@ -602,11 +602,11 @@ const Employees = () => {
             return (
               <Card key={employee.id} className="group hover:shadow-glow hover:scale-[1.01] transition-all duration-200 animate-fade-in">
                 <CardHeader 
-                  className={isSelectMode ? '' : 'cursor-pointer'}
+                  className={`${isSelectMode ? '' : 'cursor-pointer'} overflow-visible`}
                   onClick={() => !isSelectMode && setSelectedEmployeeId(isExpanded ? '' : employee.id)}
                 >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1 flex items-center gap-2">
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="flex-1 flex items-center gap-2 min-w-0">
                       {isSelectMode && (
                         <Checkbox
                           checked={selectedEmployees.has(employee.id)}
@@ -614,14 +614,14 @@ const Employees = () => {
                           onClick={(e) => e.stopPropagation()}
                         />
                       )}
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <CardTitle className="text-base">
                           {employee.first_name} {employee.last_name}
                         </CardTitle>
                         <p className="text-sm text-muted-foreground">{employee.hourly_rate}€/h</p>
                       </div>
                     </div>
-                    <div className="flex items-start gap-2 flex-shrink-0">
+                    <div className="flex items-start gap-2 flex-shrink-0 z-10">
                       <div className="text-right">
                         <div className="text-sm font-medium">{stats.totalHours}h</div>
                         <div className="text-xs text-warning font-medium">{stats.totalDue}€ dû</div>
@@ -631,7 +631,7 @@ const Employees = () => {
                           <Button
                             size="sm"
                             variant="default"
-                            className="h-8 px-3 bg-primary text-primary-foreground hover:bg-primary/90 flex-shrink-0"
+                            className="h-8 px-3 bg-primary text-primary-foreground hover:bg-primary/90 flex-shrink-0 whitespace-nowrap"
                             onClick={(e) => {
                               e.stopPropagation();
                               exportEmployeePayrollToPDF({
