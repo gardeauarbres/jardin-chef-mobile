@@ -239,6 +239,15 @@ const Dashboard = () => {
         dueDate: invoice.due_date,
       }));
 
+    // Debug: log pour vérifier les données
+    console.log('Documents à envoyer:', {
+      employees: employeePayrolls.length,
+      invoices: invoicesToSend.length,
+      totalEmployees: employees.length,
+      totalTimesheets: timesheets.length,
+      totalInvoices: invoices.length,
+    });
+
     return {
       employees: employeePayrolls,
       invoices: invoicesToSend,
@@ -377,73 +386,10 @@ const Dashboard = () => {
           />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-primary" />
-                Statut des devis
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {quotes.length === 0 ? (
-                <p className="text-muted-foreground text-sm text-center py-8">
-                  Aucun devis pour le moment
-                </p>
-              ) : (
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={chartData.statusData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="value" fill="#4ade80" />
-                  </BarChart>
-                </ResponsiveContainer>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Hammer className="h-5 w-5 text-success" />
-                Statut des chantiers
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {sites.length === 0 ? (
-                <p className="text-muted-foreground text-sm text-center py-8">
-                  Aucun chantier pour le moment
-                </p>
-              ) : (
-                <ResponsiveContainer width="100%" height={200}>
-                  <PieChart>
-                    <Pie
-                      data={chartData.siteStatusData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {chartData.siteStatusData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card>
+        {/* Section Documents à envoyer - Toujours visible en haut */}
+        <Card className="border-2 border-primary/20">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <FileText className="h-5 w-5 text-primary" />
               Documents à envoyer
             </CardTitle>
@@ -582,6 +528,70 @@ const Dashboard = () => {
             </div>
           </CardContent>
         </Card>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" />
+                Statut des devis
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {quotes.length === 0 ? (
+                <p className="text-muted-foreground text-sm text-center py-8">
+                  Aucun devis pour le moment
+                </p>
+              ) : (
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={chartData.statusData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="value" fill="#4ade80" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Hammer className="h-5 w-5 text-success" />
+                Statut des chantiers
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {sites.length === 0 ? (
+                <p className="text-muted-foreground text-sm text-center py-8">
+                  Aucun chantier pour le moment
+                </p>
+              ) : (
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie
+                      data={chartData.siteStatusData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {chartData.siteStatusData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
         <Card>
           <CardHeader>
