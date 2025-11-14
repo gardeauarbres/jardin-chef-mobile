@@ -1,5 +1,4 @@
 // Supabase Edge Function pour envoyer des factures par email via Resend
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
@@ -27,11 +26,11 @@ const corsHeaders = {
   'Access-Control-Max-Age': '86400',
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   // Gérer les requêtes CORS preflight
   if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 204,
+    return new Response('ok', {
+      status: 200,
       headers: corsHeaders,
     })
   }
