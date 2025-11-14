@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, FileText, Hammer, Euro, TrendingUp, LogOut, Moon, Sun, Calendar, Target, CheckCircle2, Download, Mail, User, X, Eye, EyeOff } from 'lucide-react';
+import { Users, FileText, Hammer, Euro, TrendingUp, LogOut, Moon, Sun, Calendar, Target, CheckCircle2, Download, Mail, User, X, Eye, EyeOff, Bell, Package } from 'lucide-react';
 import { StatsCard } from '@/components/StatsCard';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useEffect, useState, useMemo, useRef } from 'react';
@@ -18,6 +18,7 @@ import { GlobalSearch } from '@/components/GlobalSearch';
 import { DataExport } from '@/components/DataExport';
 import { Notifications } from '@/components/Notifications';
 import { AdvancedStats } from '@/components/AdvancedStats';
+import { ReminderSystem } from '@/components/ReminderSystem';
 import { exportEmployeePayrollToPDF } from '@/lib/pdfExport';
 import { exportInvoiceToPDF } from '@/lib/pdfExport';
 import { toast } from 'sonner';
@@ -705,6 +706,169 @@ const Dashboard = () => {
                 payments={payments}
                 clients={clients}
               />
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Gestion des stocks */}
+        {!hiddenCards.has('inventory') && (
+          <Card className="relative border-2 border-purple-500/20">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 right-2 h-8 w-8 opacity-60 hover:opacity-100 z-20"
+              onClick={() => toggleCard('inventory')}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg pr-10">
+                <Package className="h-5 w-5 text-purple-500" />
+                Gestion des stocks
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Gérez vos matériaux, plantes, outils et produits
+              </p>
+              <Button
+                onClick={() => navigate('/inventory')}
+                className="w-full"
+                variant="outline"
+              >
+                <Package className="h-4 w-4 mr-2" />
+                Accéder aux stocks
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Accès rapide aux templates d'emails */}
+        {!hiddenCards.has('email-templates') && (
+          <Card className="relative border-2 border-blue-500/20">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 right-2 h-8 w-8 opacity-60 hover:opacity-100 z-20"
+              onClick={() => toggleCard('email-templates')}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg pr-10">
+                <Mail className="h-5 w-5 text-blue-500" />
+                Templates d'emails
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Personnalisez vos emails pour factures, devis et rappels
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="text-center p-3 bg-muted rounded-lg">
+                  <div className="text-2xl font-bold">5</div>
+                  <div className="text-xs text-muted-foreground">Templates par défaut</div>
+                </div>
+                <div className="text-center p-3 bg-muted rounded-lg">
+                  <div className="text-2xl font-bold">
+                    {(() => {
+                      const saved = localStorage.getItem('email-templates');
+                      const templates = saved ? JSON.parse(saved) : [];
+                      return templates.filter((t: any) => !t.isDefault).length;
+                    })()}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Templates personnalisés</div>
+                </div>
+              </div>
+              <Button
+                onClick={() => navigate('/email-templates')}
+                className="w-full"
+                variant="outline"
+              >
+                <Mail className="h-4 w-4 mr-2" />
+                Gérer les templates
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Système de rappels - Vue compacte avec bouton pour accéder à la page complète */}
+        {!hiddenCards.has('reminders') && (
+          <Card className="relative border-2 border-orange-500/20">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 right-2 h-8 w-8 opacity-60 hover:opacity-100 z-20"
+              onClick={() => toggleCard('reminders')}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg pr-10">
+                <Bell className="h-5 w-5 text-orange-500" />
+                Rappels de paiement
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {(() => {
+                const today = new Date();
+                const overdueInvoices = invoices.filter((inv: any) => {
+                  if (inv.status !== 'sent' && inv.status !== 'overdue') return false;
+                  if (!inv.due_date) return false;
+                  const dueDate = new Date(inv.due_date);
+                  return today > dueDate;
+                });
+
+                const urgentCount = overdueInvoices.filter((inv: any) => {
+                  const daysLate = Math.floor((today.getTime() - new Date(inv.due_date).getTime()) / (1000 * 60 * 60 * 24));
+                  return daysLate >= 30;
+                }).length;
+
+                const warningCount = overdueInvoices.filter((inv: any) => {
+                  const daysLate = Math.floor((today.getTime() - new Date(inv.due_date).getTime()) / (1000 * 60 * 60 * 24));
+                  return daysLate >= 15 && daysLate < 30;
+                }).length;
+
+                const totalOverdue = overdueInvoices.reduce((sum: number, inv: any) => sum + (inv.total_amount || 0), 0);
+
+                return (
+                  <>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-red-500">{urgentCount}</div>
+                        <div className="text-xs text-muted-foreground">+30j retard</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-orange-500">{warningCount}</div>
+                        <div className="text-xs text-muted-foreground">15-30j retard</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold">{overdueInvoices.length}</div>
+                        <div className="text-xs text-muted-foreground">Total en retard</div>
+                      </div>
+                    </div>
+
+                    {overdueInvoices.length > 0 && (
+                      <div className="p-3 bg-orange-500/10 rounded-lg">
+                        <p className="text-sm font-semibold text-orange-700 dark:text-orange-400">
+                          Montant total en attente : {totalOverdue.toFixed(2)}€
+                        </p>
+                      </div>
+                    )}
+
+                    <Button
+                      onClick={() => navigate('/reminders')}
+                      className="w-full"
+                      variant={overdueInvoices.length > 0 ? 'default' : 'outline'}
+                    >
+                      <Bell className="h-4 w-4 mr-2" />
+                      {overdueInvoices.length > 0
+                        ? `Gérer les ${overdueInvoices.length} facture${overdueInvoices.length > 1 ? 's' : ''} en retard`
+                        : 'Voir tous les rappels'}
+                    </Button>
+                  </>
+                );
+              })()}
             </CardContent>
           </Card>
         )}

@@ -20,6 +20,10 @@ const PaymentForm = lazy(() => import("./pages/PaymentForm"));
 const Employees = lazy(() => import("./pages/Employees"));
 const Calendar = lazy(() => import("./pages/Calendar"));
 const Invoices = lazy(() => import("./pages/Invoices"));
+const Reminders = lazy(() => import("./pages/Reminders"));
+const EmailTemplatesPage = lazy(() => import("./pages/EmailTemplatesPage"));
+const Inventory = lazy(() => import("./pages/Inventory"));
+const More = lazy(() => import("./pages/More"));
 const Auth = lazy(() => import("./pages/Auth"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -72,6 +76,10 @@ const App = () => (
             <Route path="/payments/:id" element={<PaymentForm />} />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/invoices" element={<Invoices />} />
+            <Route path="/reminders" element={<Reminders />} />
+            <Route path="/email-templates" element={<EmailTemplatesPage />} />
+            <Route path="/inventory" element={<Inventory />} />
+            <Route path="/more" element={<More />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

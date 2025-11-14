@@ -1,91 +1,183 @@
-/**
- * Service d'envoi d'email pour les factures
- * Utilise Supabase Edge Function pour envoyer des emails via Resend API
- */
+import { EmailTemplate } from '@/components/EmailTemplates';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-
-interface SendInvoiceEmailParams {
+interface EmailData {
   to: string;
-  invoiceNumber: string;
-  clientName: string;
-  pdfBase64: string;
-  pdfFileName: string;
-  amount: number;
-  dueDate: string;
+  subject: string;
+  body: string;
+}
+
+interface TemplateVariables {
+  [key: string]: string;
 }
 
 /**
- * Envoie une facture par email via Supabase Edge Function (qui utilise Resend API)
+ * Récupère un template d'email par son ID
  */
-export async function sendInvoiceEmail({
-  to,
-  invoiceNumber,
-  clientName,
-  pdfBase64,
-  pdfFileName,
-  amount,
-  dueDate,
-}: SendInvoiceEmailParams): Promise<void> {
-  if (!SUPABASE_URL) {
-    throw new Error(
-      'VITE_SUPABASE_URL n\'est pas configurée. Veuillez vérifier votre configuration.'
-    );
-  }
+export function getEmailTemplate(templateId: string): EmailTemplate | null {
+  const saved = localStorage.getItem('email-templates');
+  if (!saved) return null;
 
-  // Récupérer le token d'authentification depuis Supabase
-  const { supabase } = await import('@/integrations/supabase/client');
-  const { data: { session } } = await supabase.auth.getSession();
-
-  if (!session) {
-    throw new Error('Vous devez être connecté pour envoyer un email');
-  }
-
-  // Appeler la Edge Function Supabase
-  const functionUrl = `${SUPABASE_URL}/functions/v1/send-invoice-email`;
-
-  try {
-    const response = await fetch(functionUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`,
-        'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '',
-      },
-      body: JSON.stringify({
-        to,
-        invoiceNumber,
-        clientName,
-        pdfBase64,
-        pdfFileName,
-        amount,
-        dueDate,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.error || `Erreur lors de l'envoi de l'email: ${response.statusText}`
-      );
-    }
-
-    const data = await response.json();
-    if (data.error) {
-      throw new Error(data.error || 'Erreur lors de l\'envoi de l\'email');
-    }
-  } catch (error) {
-    if (error instanceof Error) {
-      throw error;
-    }
-    throw new Error('Erreur inconnue lors de l\'envoi de l\'email');
-  }
+  const templates: EmailTemplate[] = JSON.parse(saved);
+  return templates.find((t) => t.id === templateId) || null;
 }
 
 /**
- * Vérifie si le service d'email est configuré
+ * Récupère tous les templates d'une catégorie
  */
-export function isEmailServiceConfigured(): boolean {
-  return !!SUPABASE_URL;
+export function getEmailTemplatesByCategory(
+  category: EmailTemplate['category']
+): EmailTemplate[] {
+  const saved = localStorage.getItem('email-templates');
+  if (!saved) return [];
+
+  const templates: EmailTemplate[] = JSON.parse(saved);
+  return templates.filter((t) => t.category === category);
 }
 
+/**
+ * Remplit un template avec les variables fournies
+ */
+export function fillEmailTemplate(
+  template: EmailTemplate,
+  variables: TemplateVariables
+): EmailData {
+  let subject = template.subject;
+  let body = template.body;
+
+  // Remplacer toutes les variables
+  Object.entries(variables).forEach(([key, value]) => {
+    const regex = new RegExp(`{{${key}}}`, 'g');
+    subject = subject.replace(regex, value);
+    body = body.replace(regex, value);
+  });
+
+  return {
+    to: variables.client_email || '',
+    subject,
+    body,
+  };
+}
+
+/**
+ * Prépare un email pour une facture
+ */
+export function prepareInvoiceEmail(
+  invoice: any,
+  templateId: string = 'invoice-new'
+): EmailData | null {
+  const template = getEmailTemplate(templateId);
+  if (!template) return null;
+
+  const client = invoice.clients || invoice.client;
+  const variables: TemplateVariables = {
+    client_name: client
+      ? `${client.first_name} ${client.last_name}`
+      : 'Client',
+    client_email: client?.email || '',
+    invoice_number: invoice.invoice_number || '',
+    total_amount: invoice.total_amount?.toFixed(2) || '0.00',
+    amount: invoice.amount?.toFixed(2) || '0.00',
+    tax_rate: invoice.tax_rate?.toString() || '20',
+    tax_amount: invoice.tax_amount?.toFixed(2) || '0.00',
+    issue_date: invoice.issue_date
+      ? new Date(invoice.issue_date).toLocaleDateString('fr-FR')
+      : '',
+    due_date: invoice.due_date
+      ? new Date(invoice.due_date).toLocaleDateString('fr-FR')
+      : '',
+    company_name: 'Jardin Chef',
+    company_email: 'contact@jardinchef.fr',
+    company_phone: '01 23 45 67 89',
+  };
+
+  return fillEmailTemplate(template, variables);
+}
+
+/**
+ * Prépare un email pour un devis
+ */
+export function prepareQuoteEmail(
+  quote: any,
+  templateId: string = 'quote-new'
+): EmailData | null {
+  const template = getEmailTemplate(templateId);
+  if (!template) return null;
+
+  const client = quote.clients || quote.client;
+  const variables: TemplateVariables = {
+    client_name: client
+      ? `${client.first_name} ${client.last_name}`
+      : 'Client',
+    client_email: client?.email || '',
+    quote_number: quote.quote_number || '',
+    description: quote.description || 'Travaux de jardinage',
+    total_amount: quote.total_amount?.toFixed(2) || '0.00',
+    valid_until: quote.valid_until
+      ? new Date(quote.valid_until).toLocaleDateString('fr-FR')
+      : '',
+    company_name: 'Jardin Chef',
+    company_email: 'contact@jardinchef.fr',
+    company_phone: '01 23 45 67 89',
+  };
+
+  return fillEmailTemplate(template, variables);
+}
+
+/**
+ * Prépare un email de rappel pour une facture
+ */
+export function prepareReminderEmail(
+  invoice: any,
+  templateId: string = 'reminder-gentle'
+): EmailData | null {
+  const template = getEmailTemplate(templateId);
+  if (!template) return null;
+
+  const client = invoice.clients || invoice.client;
+  const variables: TemplateVariables = {
+    client_name: client
+      ? `${client.first_name} ${client.last_name}`
+      : 'Client',
+    client_email: client?.email || '',
+    invoice_number: invoice.invoice_number || '',
+    total_amount: invoice.total_amount?.toFixed(2) || '0.00',
+    due_date: invoice.due_date
+      ? new Date(invoice.due_date).toLocaleDateString('fr-FR')
+      : '',
+    company_name: 'Jardin Chef',
+    company_email: 'contact@jardinchef.fr',
+    company_phone: '01 23 45 67 89',
+  };
+
+  return fillEmailTemplate(template, variables);
+}
+
+/**
+ * Simule l'envoi d'un email (à remplacer par un vrai service d'envoi)
+ */
+export async function sendEmail(emailData: EmailData): Promise<boolean> {
+  // Pour l'instant, on simule l'envoi
+  console.log('📧 Email simulé:', emailData);
+  
+  // TODO: Intégrer avec un service d'envoi d'emails (Resend, SendGrid, etc.)
+  // Exemple avec Resend:
+  // const response = await fetch('https://api.resend.com/emails', {
+  //   method: 'POST',
+  //   headers: {
+  //     'Authorization': `Bearer ${RESEND_API_KEY}`,
+  //     'Content-Type': 'application/json',
+  //   },
+  //   body: JSON.stringify({
+  //     from: 'noreply@jardinchef.fr',
+  //     to: emailData.to,
+  //     subject: emailData.subject,
+  //     text: emailData.body,
+  //   }),
+  // });
+
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(true);
+    }, 1000);
+  });
+}

@@ -16,6 +16,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSupabaseMutation } from "@/hooks/useSupabaseQuery";
 import MobileNav from "@/components/MobileNav";
 import { PhotoGallery } from "@/components/PhotoGallery";
+import { SiteMaterialsManager } from "@/components/SiteMaterialsManager";
 
 const siteSchema = z.object({
   title: z
@@ -442,6 +443,22 @@ const SiteForm = () => {
             </Form>
           </CardContent>
         </Card>
+
+        {/* Gestion des matériaux - seulement en mode édition */}
+        {id ? (
+          <div className="mt-4">
+            <SiteMaterialsManager siteId={id} />
+          </div>
+        ) : (
+          <Card className="mt-4">
+            <CardContent className="pt-6">
+              <div className="text-center text-muted-foreground">
+                <p className="mb-2">Créez d'abord le chantier pour gérer les matériaux</p>
+                <p className="text-sm">Après la création, vous pourrez ajouter les matériaux utilisés</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Galerie photo - seulement en mode édition */}
         {id ? (
