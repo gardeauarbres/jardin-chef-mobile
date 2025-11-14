@@ -17,7 +17,6 @@ export function useSupabaseQuery<T>(
       } catch (error: any) {
         // Si c'est une erreur 404 ou table n'existe pas, retourner un tableau vide pour les tableaux
         if (error?.code === 'PGRST116' || error?.status === 404 || error?.message?.includes('does not exist')) {
-          console.warn('Table does not exist or 404 error:', error);
           // Retourner un tableau vide par défaut si T est un tableau
           return [] as unknown as T;
         }
@@ -142,7 +141,6 @@ export function useSites() {
                           error.message?.includes('relation') && error.message?.includes('does not exist');
         
         if (is404Error) {
-          console.warn('Table sites does not exist or 404 error:', error.message);
           return [];
         }
         throw error;
@@ -188,7 +186,6 @@ export function usePayments() {
                           error.message?.includes('relation') && error.message?.includes('does not exist');
         
         if (is404Error) {
-          console.warn('Table payments does not exist or 404 error:', error.message);
           return [];
         }
         throw error;

@@ -42,18 +42,48 @@ export const NavigationDialog = ({
 
   const handleCopyAddress = async () => {
     try {
+      // Vérifier si le Clipboard API est disponible
+      if (!navigator.clipboard) {
+        // Fallback pour les navigateurs qui ne supportent pas l'API Clipboard
+        const textArea = document.createElement('textarea');
+        textArea.value = address;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          document.body.removeChild(textArea);
+          toast.success('Adresse copiée dans le presse-papiers');
+          setOpen(false);
+        } catch (err) {
+          document.body.removeChild(textArea);
+          toast.error('Impossible de copier l\'adresse. Veuillez la copier manuellement.');
+        }
+        return;
+      }
+
       await navigator.clipboard.writeText(address);
       toast.success('Adresse copiée dans le presse-papiers');
       setOpen(false);
     } catch (error) {
-      toast.error('Erreur lors de la copie');
+      toast.error('Erreur lors de la copie de l\'adresse');
     }
   };
 
   const handleOpenNavigation = (url: string, service: string) => {
-    window.open(url, '_blank');
-    toast.success(`Ouverture de ${service}...`);
-    setOpen(false);
+    try {
+      const newWindow = window.open(url, '_blank', 'noopener,noreferrer');
+      if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+        // Le popup a été bloqué
+        toast.error('Popup bloqué. Veuillez autoriser les popups pour ce site.');
+      } else {
+        toast.success(`Ouverture de ${service}...`);
+        setOpen(false);
+      }
+    } catch (error) {
+      toast.error(`Erreur lors de l'ouverture de ${service}`);
+    }
   };
 
   return (
