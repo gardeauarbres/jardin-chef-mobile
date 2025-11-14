@@ -199,9 +199,21 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
-      throw new Error(
-        errorData.message || `Erreur lors de l'envoi de l'email: ${response.statusText}`
-      )
+      console.error('Resend API Error:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorData,
+        apiKeyPrefix: RESEND_API_KEY?.substring(0, 10) + '...',
+      })
+      
+      // Message d'erreur plus détaillé
+      let errorMessage = errorData.message || `Erreur lors de l'envoi de l'email: ${response.statusText}`
+      
+      if (errorData.name === 'restricted_api_key') {
+        errorMessage = 'La clé API Resend est restreinte. Vérifiez que vous utilisez une clé avec les permissions complètes dans Supabase Secrets.'
+      }
+      
+      throw new Error(errorMessage)
     }
 
     const data = await response.json()
