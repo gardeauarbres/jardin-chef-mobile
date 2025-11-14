@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Search, Phone, Mail, Trash2, Download, FileText, ChevronDown, ChevronUp, FileSpreadsheet } from 'lucide-react';
+import { Plus, Search, Phone, Mail, Trash2, Download, FileText, ChevronDown, ChevronUp, FileSpreadsheet, Upload, CheckSquare, Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Pagination } from '@/components/Pagination';
 import { SortableList, SortOption } from '@/components/SortableList';
 import { DateRangeFilter } from '@/components/DateFilter';
@@ -23,6 +24,7 @@ import {
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { useClients, useSupabaseMutation } from '@/hooks/useSupabaseQuery';
+import { useQueryClient } from '@tanstack/react-query';
 import { useInvoices, useSendInvoiceEmail } from '@/hooks/useInvoices';
 import { exportInvoiceToPDF } from '@/lib/pdfExport';
 import { exportClients } from '@/lib/dataExport';
@@ -68,11 +70,14 @@ const Clients = () => {
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
+  const [selectedClients, setSelectedClients] = useState<Set<string>>(new Set());
+  const [isSelectMode, setIsSelectMode] = useState(false);
 
   // Utiliser le hook optimisé avec cache
   const { data: clients = [], isLoading, error } = useClients();
   const { data: allInvoices = [] } = useInvoices();
   const sendEmailMutation = useSendInvoiceEmail();
+  const queryClient = useQueryClient();
 
   // Mutation optimisée pour la suppression
   const deleteMutation = useSupabaseMutation(
@@ -223,6 +228,78 @@ const Clients = () => {
     }
   };
 
+  // Gestion de la sélection
+  const toggleSelectMode = () => {
+    setIsSelectMode(!isSelectMode);
+    if (isSelectMode) {
+      setSelectedClients(new Set());
+    }
+  };
+
+  const toggleClientSelection = (clientId: string) => {
+    const newSelection = new Set(selectedClients);
+    if (newSelection.has(clientId)) {
+      newSelection.delete(clientId);
+    } else {
+      newSelection.add(clientId);
+    }
+    setSelectedClients(newSelection);
+  };
+
+  const selectAllClients = () => {
+    setSelectedClients(new Set(filteredClients.map(c => c.id)));
+  };
+
+  const deselectAllClients = () => {
+    setSelectedClients(new Set());
+  };
+
+  const handleExportSelected = (format: 'excel' | 'csv') => {
+    if (selectedClients.size === 0) {
+      toast.error('Veuillez sélectionner au moins un client');
+      return;
+    }
+
+    const selectedClientsData = filteredClients.filter(c => selectedClients.has(c.id));
+    try {
+      if (format === 'excel') {
+        exportClients(selectedClientsData, 'excel');
+        toast.success(`${selectedClients.size} client(s) exporté(s) en Excel`);
+      } else {
+        exportClients(selectedClientsData, 'csv');
+        toast.success(`${selectedClients.size} client(s) exporté(s) en CSV`);
+      }
+      setIsSelectMode(false);
+      setSelectedClients(new Set());
+    } catch (error) {
+      toast.error('Erreur lors de l\'export');
+    }
+  };
+
+  const handleImportFile = async (file: File) => {
+    if (!user) {
+      toast.error('Vous devez être connecté pour importer');
+      return;
+    }
+
+    // Confirmation avant import
+    if (!confirm(`Voulez-vous importer les données depuis "${file.name}" ?`)) {
+      return;
+    }
+
+    try {
+      const { importClients } = await import('@/lib/dataImport');
+      await importClients(file, user.id);
+      
+      // Invalider le cache pour rafraîchir les données
+      queryClient.invalidateQueries({ queryKey: ['clients', user.id] });
+      
+      toast.success('Import réussi');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de l\'import');
+    }
+  };
+
   if (loading || isLoading) {
     return (
       <div className="min-h-screen bg-background pb-20">
@@ -270,36 +347,87 @@ const Clients = () => {
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon" title="Exporter les données">
+              <Button variant="outline" size="icon" title="Exporter/Importer les données">
                 <FileSpreadsheet className="h-5 w-5" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() => {
-                  try {
-                    exportClients(filteredClients, 'excel');
-                    toast.success('Export Excel réussi');
-                  } catch (error) {
-                    toast.error('Erreur lors de l\'export');
-                  }
-                }}
-              >
-                <FileSpreadsheet className="h-4 w-4 mr-2" />
-                Exporter en Excel
+              <DropdownMenuItem onClick={toggleSelectMode}>
+                {isSelectMode ? (
+                  <>
+                    <Square className="h-4 w-4 mr-2" />
+                    Désactiver la sélection
+                  </>
+                ) : (
+                  <>
+                    <CheckSquare className="h-4 w-4 mr-2" />
+                    Sélectionner pour exporter
+                  </>
+                )}
               </DropdownMenuItem>
+              {isSelectMode && (
+                <>
+                  <DropdownMenuItem onClick={selectAllClients}>
+                    <CheckSquare className="h-4 w-4 mr-2" />
+                    Tout sélectionner
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={deselectAllClients}>
+                    <Square className="h-4 w-4 mr-2" />
+                    Tout désélectionner
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleExportSelected('excel')}
+                    disabled={selectedClients.size === 0}
+                  >
+                    <FileSpreadsheet className="h-4 w-4 mr-2" />
+                    Exporter sélection ({selectedClients.size})
+                  </DropdownMenuItem>
+                </>
+              )}
+              {!isSelectMode && (
+                <>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      try {
+                        exportClients(filteredClients, 'excel');
+                        toast.success('Export Excel réussi');
+                      } catch (error) {
+                        toast.error('Erreur lors de l\'export');
+                      }
+                    }}
+                  >
+                    <FileSpreadsheet className="h-4 w-4 mr-2" />
+                    Exporter tout en Excel
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      try {
+                        exportClients(filteredClients, 'csv');
+                        toast.success('Export CSV réussi');
+                      } catch (error) {
+                        toast.error('Erreur lors de l\'export');
+                      }
+                    }}
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Exporter tout en CSV
+                  </DropdownMenuItem>
+                </>
+              )}
               <DropdownMenuItem
                 onClick={() => {
-                  try {
-                    exportClients(filteredClients, 'csv');
-                    toast.success('Export CSV réussi');
-                  } catch (error) {
-                    toast.error('Erreur lors de l\'export');
-                  }
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = '.xlsx,.xls,.csv';
+                  input.onchange = (e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0];
+                    if (file) handleImportFile(file);
+                  };
+                  input.click();
                 }}
               >
-                <FileText className="h-4 w-4 mr-2" />
-                Exporter en CSV
+                <Upload className="h-4 w-4 mr-2" />
+                Importer depuis Excel/CSV
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -307,6 +435,32 @@ const Clients = () => {
             <Plus className="h-5 w-5" />
           </Button>
         </div>
+
+        {isSelectMode && selectedClients.size > 0 && (
+          <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 flex items-center justify-between">
+            <span className="text-sm font-medium">
+              {selectedClients.size} client{selectedClients.size > 1 ? 's' : ''} sélectionné{selectedClients.size > 1 ? 's' : ''}
+            </span>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleExportSelected('excel')}
+              >
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                Exporter en Excel
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleExportSelected('csv')}
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Exporter en CSV
+              </Button>
+            </div>
+          </div>
+        )}
 
         <div className="flex gap-2 flex-wrap">
           <DateRangeFilter
@@ -369,6 +523,14 @@ const Clients = () => {
                       onClick={() => navigate(`/clients/${client.id}`)}
                     >
                       <div className="flex items-start justify-between">
+                        {isSelectMode && (
+                          <div className="mr-3 mt-1" onClick={(e) => e.stopPropagation()}>
+                            <Checkbox
+                              checked={selectedClients.has(client.id)}
+                              onCheckedChange={() => toggleClientSelection(client.id)}
+                            />
+                          </div>
+                        )}
                         <div className="flex-1">
                           <h3 className="font-semibold text-lg">
                             {client.first_name} {client.last_name}
