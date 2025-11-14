@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, X, Users, FileText, Hammer, Euro, User } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -26,6 +26,7 @@ export const GlobalSearch = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
   const { user } = useAuth();
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const { data: clients = [] } = useClients();
   const { data: quotes = [] } = useQuotes();
@@ -142,6 +143,16 @@ export const GlobalSearch = () => {
     return sortedResults.slice(0, 15); // Limiter à 15 résultats
   }, [searchTerm, clients, quotes, sites, payments, user]);
 
+  // Focus sur l'input quand le Dialog s'ouvre
+  useEffect(() => {
+    if (open && searchInputRef.current) {
+      // Petit délai pour s'assurer que le Dialog est complètement monté
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 100);
+    }
+  }, [open]);
+
   // Raccourci clavier Ctrl+K ou Cmd+K pour ouvrir la recherche
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -153,13 +164,6 @@ export const GlobalSearch = () => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
         setOpen(true);
-        // Focus sur l'input de recherche après ouverture
-        setTimeout(() => {
-          const searchInput = document.querySelector('[placeholder*="Tapez pour rechercher"]') as HTMLInputElement;
-          if (searchInput) {
-            searchInput.focus();
-          }
-        }, 100);
       }
       
       // Échap pour fermer (uniquement si pas dans un input ou si la recherche est ouverte)
@@ -218,13 +222,6 @@ export const GlobalSearch = () => {
         className="relative h-9 w-full justify-start text-sm text-muted-foreground sm:pr-12 md:w-40 lg:w-64"
         onClick={() => {
           setOpen(true);
-          // Focus sur l'input après ouverture
-          setTimeout(() => {
-            const searchInput = document.querySelector('[placeholder*="Tapez pour rechercher"]') as HTMLInputElement;
-            if (searchInput) {
-              searchInput.focus();
-            }
-          }, 100);
         }}
       >
         <Search className="mr-2 h-4 w-4" />
@@ -247,6 +244,7 @@ export const GlobalSearch = () => {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
+                ref={searchInputRef}
                 placeholder="Tapez pour rechercher..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
