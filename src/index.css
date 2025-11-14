@@ -148,8 +148,4 @@ All colors MUST be HSL.
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* Améliorer le scroll sur mobile */
-  * {
-    -webkit-overflow-scrolling: touch;
-  }
 }
