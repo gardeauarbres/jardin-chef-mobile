@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Search, Phone, Mail, Trash2, Download, FileText, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Search, Phone, Mail, Trash2, Download, FileText, ChevronDown, ChevronUp, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -25,9 +25,16 @@ import { useAuth } from '@/hooks/useAuth';
 import { useClients, useSupabaseMutation } from '@/hooks/useSupabaseQuery';
 import { useInvoices, useSendInvoiceEmail } from '@/hooks/useInvoices';
 import { exportInvoiceToPDF } from '@/lib/pdfExport';
+import { exportClients } from '@/lib/dataExport';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale/fr';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface Client {
   id: string;
@@ -261,6 +268,41 @@ const Clients = () => {
               className="pl-9"
             />
           </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" title="Exporter les données">
+                <FileSpreadsheet className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={() => {
+                  try {
+                    exportClients(filteredClients, 'excel');
+                    toast.success('Export Excel réussi');
+                  } catch (error) {
+                    toast.error('Erreur lors de l\'export');
+                  }
+                }}
+              >
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                Exporter en Excel
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  try {
+                    exportClients(filteredClients, 'csv');
+                    toast.success('Export CSV réussi');
+                  } catch (error) {
+                    toast.error('Erreur lors de l\'export');
+                  }
+                }}
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Exporter en CSV
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button onClick={() => navigate('/clients/new')} size="icon">
             <Plus className="h-5 w-5" />
           </Button>

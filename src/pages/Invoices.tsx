@@ -1,12 +1,19 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Trash2, Search, Filter, Download, Mail, FileText } from 'lucide-react';
+import { Plus, Trash2, Search, Filter, Download, Mail, FileText, FileSpreadsheet } from 'lucide-react';
 import { exportInvoiceToPDF } from '@/lib/pdfExport';
+import { exportInvoices } from '@/lib/dataExport';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Pagination } from '@/components/Pagination';
 import { SortableList, SortOption } from '@/components/SortableList';
 import { DateRangeFilter } from '@/components/DateFilter';
@@ -286,20 +293,57 @@ export default function Invoices() {
                   className="w-full"
                 />
               </div>
-              <div className="w-full md:w-48">
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Tous les statuts" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tous les statuts</SelectItem>
-                    <SelectItem value="draft">Brouillon</SelectItem>
-                    <SelectItem value="sent">Envoyée</SelectItem>
-                    <SelectItem value="paid">Payée</SelectItem>
-                    <SelectItem value="overdue">En retard</SelectItem>
-                    <SelectItem value="cancelled">Annulée</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="flex gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="icon" title="Exporter les données">
+                      <FileSpreadsheet className="h-5 w-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={() => {
+                        try {
+                          exportInvoices(filteredAndSortedInvoices, 'excel');
+                          toast.success('Export Excel réussi');
+                        } catch (error) {
+                          toast.error('Erreur lors de l\'export');
+                        }
+                      }}
+                    >
+                      <FileSpreadsheet className="h-4 w-4 mr-2" />
+                      Exporter en Excel
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        try {
+                          exportInvoices(filteredAndSortedInvoices, 'csv');
+                          toast.success('Export CSV réussi');
+                        } catch (error) {
+                          toast.error('Erreur lors de l\'export');
+                        }
+                      }}
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Exporter en CSV
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <div className="w-full md:w-48">
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Tous les statuts" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tous les statuts</SelectItem>
+                      <SelectItem value="draft">Brouillon</SelectItem>
+                      <SelectItem value="sent">Envoyée</SelectItem>
+                      <SelectItem value="paid">Payée</SelectItem>
+                      <SelectItem value="overdue">En retard</SelectItem>
+                      <SelectItem value="cancelled">Annulée</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
 

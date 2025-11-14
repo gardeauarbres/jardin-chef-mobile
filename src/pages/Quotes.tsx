@@ -1,12 +1,19 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Trash2, Search, Filter, Download, FileText } from 'lucide-react';
+import { Plus, Trash2, Search, Filter, Download, FileText, FileSpreadsheet } from 'lucide-react';
 import { exportQuoteToPDF } from '@/lib/pdfExport';
+import { exportQuotes } from '@/lib/dataExport';
 import { InvoiceForm } from '@/components/InvoiceForm';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Pagination } from '@/components/Pagination';
 import { SortableList, SortOption } from '@/components/SortableList';
 import { DateRangeFilter } from '@/components/DateFilter';
@@ -204,6 +211,41 @@ const Quotes = () => {
                   className="pl-10"
                 />
               </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon" title="Exporter les données">
+                    <FileSpreadsheet className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => {
+                      try {
+                        exportQuotes(filteredQuotes, 'excel');
+                        toast.success('Export Excel réussi');
+                      } catch (error) {
+                        toast.error('Erreur lors de l\'export');
+                      }
+                    }}
+                  >
+                    <FileSpreadsheet className="h-4 w-4 mr-2" />
+                    Exporter en Excel
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      try {
+                        exportQuotes(filteredQuotes, 'csv');
+                        toast.success('Export CSV réussi');
+                      } catch (error) {
+                        toast.error('Erreur lors de l\'export');
+                      }
+                    }}
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Exporter en CSV
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-[140px]">
                   <Filter className="h-4 w-4 mr-2" />
