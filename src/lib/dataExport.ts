@@ -99,7 +99,7 @@ export function exportClients(
     address: string;
     created_at?: string;
   }>,
-  format: 'excel' | 'csv' = 'excel'
+  exportFormat: 'excel' | 'csv' = 'excel'
 ): void {
   if (!clients || clients.length === 0) {
     throw new Error('Aucun client à exporter');
@@ -121,7 +121,7 @@ export function exportClients(
     const today = new Date();
     const filename = `clients_${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
-    if (format === 'excel') {
+    if (exportFormat === 'excel') {
       exportToExcel(exportData, filename, 'Clients');
     } else {
       exportToCSV(exportData, filename);
@@ -148,7 +148,7 @@ export function exportQuotes(
       last_name: string;
     };
   }>,
-  format: 'excel' | 'csv' = 'excel'
+  exportFormat: 'excel' | 'csv' = 'excel'
 ): void {
   if (!quotes || quotes.length === 0) {
     throw new Error('Aucun devis à exporter');
@@ -179,7 +179,7 @@ export function exportQuotes(
     const today = new Date();
     const filename = `devis_${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
-    if (format === 'excel') {
+    if (exportFormat === 'excel') {
       exportToExcel(exportData, filename, 'Devis');
     } else {
       exportToCSV(exportData, filename);
@@ -214,7 +214,7 @@ export function exportInvoices(
       email: string;
     };
   }>,
-  format: 'excel' | 'csv' = 'excel'
+  exportFormat: 'excel' | 'csv' = 'excel'
 ): void {
   if (!invoices || invoices.length === 0) {
     throw new Error('Aucune facture à exporter');
@@ -259,7 +259,7 @@ export function exportInvoices(
     const today = new Date();
     const filename = `factures_${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
-    if (format === 'excel') {
+    if (exportFormat === 'excel') {
       exportToExcel(exportData, filename, 'Factures');
     } else {
       exportToCSV(exportData, filename);
