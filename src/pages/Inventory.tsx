@@ -47,7 +47,7 @@ import {
   Hammer,
   MoreHorizontal,
 } from 'lucide-react';
-import { MobileNav } from '@/components/MobileNav';
+import MobileNav from '@/components/MobileNav';
 import { 
   useMaterials, 
   useCreateMaterial, 

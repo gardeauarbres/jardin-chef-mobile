@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MobileNav } from '@/components/MobileNav';
+import MobileNav from '@/components/MobileNav';
 import { 
   Calendar, 
   Bell, 

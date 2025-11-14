@@ -1,5 +1,5 @@
 import { EmailTemplates } from '@/components/EmailTemplates';
-import { MobileNav } from '@/components/MobileNav';
+import MobileNav from '@/components/MobileNav';
 import { Mail } from 'lucide-react';
 
 const EmailTemplatesPage = () => {

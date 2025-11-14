@@ -1,6 +1,6 @@
 import { ReminderSystem } from '@/components/ReminderSystem';
-import { useInvoices } from '@/hooks/useSupabaseQuery';
-import { MobileNav } from '@/components/MobileNav';
+import { useInvoices } from '@/hooks/useInvoices';
+import MobileNav from '@/components/MobileNav';
 import { Bell } from 'lucide-react';
 
 const Reminders = () => {
