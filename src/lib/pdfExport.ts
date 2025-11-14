@@ -527,3 +527,226 @@ export const exportQuoteToPDF = (quote: QuoteData, userName?: string) => {
   doc.save(fileName);
 };
 
+interface EmployeePayrollData {
+  id: string;
+  first_name: string;
+  last_name: string;
+  hourly_rate: number;
+  timesheets: Array<{
+    id: string;
+    date: string;
+    hours: number;
+    status: string;
+    paid_date: string | null;
+  }>;
+}
+
+export const exportEmployeePayrollToPDF = (employee: EmployeePayrollData, userName?: string) => {
+  const doc = new jsPDF();
+  
+  // Couleurs
+  const primaryColor = [74, 222, 128]; // #4ade80
+  const textColor = [0, 0, 0];
+  const grayColor = [128, 128, 128];
+  
+  let yPos = 20;
+  
+  // En-tête avec couleur
+  doc.setFillColor(...primaryColor);
+  doc.rect(0, 0, 210, 40, 'F');
+  
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(24);
+  doc.setFont('helvetica', 'bold');
+  doc.text('JARDIN CHEF', 20, 25);
+  
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Gestion pour Paysagistes', 20, 32);
+  
+  yPos = 50;
+  
+  // Titre du document
+  doc.setTextColor(...textColor);
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.text('FICHE DE PAIE / POINTAGE', 20, yPos);
+  
+  yPos += 15;
+  
+  // Informations de l'employé
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...textColor);
+  doc.text('EMPLOYÉ', 20, yPos);
+  
+  yPos += 8;
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`${employee.first_name} ${employee.last_name}`, 20, yPos);
+  
+  yPos += 6;
+  doc.setFontSize(10);
+  doc.setTextColor(...grayColor);
+  doc.text(`Taux horaire: ${employee.hourly_rate.toFixed(2)} €/h`, 20, yPos);
+  
+  // Informations à droite
+  const rightX = 120;
+  yPos = 60;
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...grayColor);
+  doc.text(`Date de génération: ${new Date().toLocaleDateString('fr-FR')}`, rightX, yPos);
+  
+  if (userName) {
+    yPos += 5;
+    doc.text(`Généré par: ${userName}`, rightX, yPos);
+  }
+  
+  yPos = 85;
+  
+  // Ligne de séparation
+  doc.setDrawColor(...grayColor);
+  doc.line(20, yPos, 190, yPos);
+  
+  yPos += 15;
+  
+  // Tableau des heures travaillées
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...textColor);
+  doc.text('RÉCAPITULATIF DES HEURES', 20, yPos);
+  
+  yPos += 10;
+  
+  // En-tête du tableau
+  doc.setFillColor(245, 245, 245);
+  doc.setDrawColor(...textColor);
+  doc.rect(20, yPos, 170, 8, 'FD');
+  
+  yPos += 6;
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...textColor);
+  doc.text('Date', 25, yPos);
+  doc.text('Heures', 70, yPos);
+  doc.text('Montant', 110, yPos);
+  doc.text('Statut', 150, yPos);
+  
+  yPos += 2;
+  
+  // Calculer les totaux
+  let totalHours = 0;
+  let totalDue = 0;
+  let totalPaid = 0;
+  
+  // Trier les timesheets par date (plus récent en premier)
+  const sortedTimesheets = [...employee.timesheets].sort((a, b) => 
+    new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
+  
+  // Lignes du tableau
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  
+  sortedTimesheets.forEach((timesheet) => {
+    if (yPos > 250) {
+      // Nouvelle page si nécessaire
+      doc.addPage();
+      yPos = 20;
+      
+      // Réafficher l'en-tête du tableau
+      doc.setFillColor(245, 245, 245);
+      doc.setDrawColor(...textColor);
+      doc.rect(20, yPos, 170, 8, 'FD');
+      yPos += 6;
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Date', 25, yPos);
+      doc.text('Heures', 70, yPos);
+      doc.text('Montant', 110, yPos);
+      doc.text('Statut', 150, yPos);
+      yPos += 2;
+      doc.setFont('helvetica', 'normal');
+    }
+    
+    const date = new Date(timesheet.date);
+    const hours = timesheet.hours;
+    const amount = hours * employee.hourly_rate;
+    const status = timesheet.status === 'paid' ? 'Payé' : 'À payer';
+    
+    totalHours += hours;
+    if (timesheet.status === 'paid') {
+      totalPaid += amount;
+    } else {
+      totalDue += amount;
+    }
+    
+    // Ligne du tableau
+    doc.setDrawColor(200, 200, 200);
+    doc.line(20, yPos - 2, 190, yPos - 2);
+    
+    yPos += 6;
+    doc.setTextColor(...textColor);
+    doc.text(date.toLocaleDateString('fr-FR'), 25, yPos);
+    doc.text(`${hours.toFixed(2)}h`, 70, yPos);
+    doc.text(`${amount.toFixed(2)} €`, 110, yPos);
+    doc.setTextColor(timesheet.status === 'paid' ? [34, 197, 94] : [234, 179, 8]);
+    doc.text(status, 150, yPos);
+  });
+  
+  yPos += 10;
+  
+  // Ligne de séparation épaisse
+  doc.setDrawColor(...textColor);
+  doc.setLineWidth(0.5);
+  doc.line(20, yPos, 190, yPos);
+  
+  yPos += 12;
+  
+  // Totaux
+  doc.setFillColor(245, 245, 245);
+  doc.rect(20, yPos, 170, 35, 'FD');
+  
+  yPos += 8;
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...textColor);
+  doc.text('Total heures travaillées:', 30, yPos);
+  doc.text(`${totalHours.toFixed(2)}h`, 150, yPos, { align: 'right' });
+  
+  yPos += 8;
+  doc.text('Montant total payé:', 30, yPos);
+  doc.setTextColor(34, 197, 94); // Vert pour payé
+  doc.text(`${totalPaid.toFixed(2)} €`, 150, yPos, { align: 'right' });
+  
+  yPos += 8;
+  doc.setTextColor(...textColor);
+  doc.text('Montant total à payer:', 30, yPos);
+  doc.setTextColor(234, 179, 8); // Jaune/Orange pour à payer
+  doc.text(`${totalDue.toFixed(2)} €`, 150, yPos, { align: 'right' });
+  
+  yPos += 8;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(...textColor);
+  doc.text('Montant total:', 30, yPos);
+  doc.text(`${(totalPaid + totalDue).toFixed(2)} €`, 150, yPos, { align: 'right' });
+  
+  yPos += 15;
+  
+  // Notes de bas de page
+  if (yPos < 250) {
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'italic');
+    doc.setTextColor(...grayColor);
+    doc.text('Document généré automatiquement par Jardin Chef', 20, 280);
+  }
+  
+  // Nom du fichier
+  const fileName = `Fiche_Paie_${employee.first_name}_${employee.last_name}_${new Date().toISOString().split('T')[0]}.pdf`;
+  
+  // Télécharger le PDF
+  doc.save(fileName);
+};
+

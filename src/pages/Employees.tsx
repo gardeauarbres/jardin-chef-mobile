@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Euro, Clock, TrendingUp, Trash2, FileSpreadsheet, FileText, Upload, CheckSquare, Square } from 'lucide-react';
+import { Plus, Euro, Clock, TrendingUp, Trash2, FileSpreadsheet, FileText, Upload, CheckSquare, Square, Download } from 'lucide-react';
 import MobileNav from '@/components/MobileNav';
 import { toast } from 'sonner';
 import {
@@ -22,6 +22,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { exportEmployees } from '@/lib/dataExport';
 import { importEmployees } from '@/lib/dataImport';
+import { exportEmployeePayrollToPDF } from '@/lib/pdfExport';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
@@ -620,11 +621,36 @@ const Employees = () => {
                         <p className="text-sm text-muted-foreground">{employee.hourly_rate}€/h</p>
                       </div>
                     </div>
-                    <div className="flex items-start gap-3">
+                    <div className="flex items-start gap-2">
                       <div className="text-right">
                         <div className="text-sm font-medium">{stats.totalHours}h</div>
                         <div className="text-xs text-warning font-medium">{stats.totalDue}€ dû</div>
                       </div>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        className="hover:bg-primary hover:text-primary-foreground transition-all h-8 w-8"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          exportEmployeePayrollToPDF({
+                            id: employee.id,
+                            first_name: employee.first_name,
+                            last_name: employee.last_name,
+                            hourly_rate: employee.hourly_rate,
+                            timesheets: empTimesheets.map(ts => ({
+                              id: ts.id,
+                              date: ts.date,
+                              hours: ts.hours,
+                              status: ts.status,
+                              paid_date: ts.paid_date,
+                            })),
+                          });
+                          toast.success('Fiche de paie générée');
+                        }}
+                        title="Télécharger la fiche de paie"
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
                       <Button
                         size="icon"
                         variant="outline"
