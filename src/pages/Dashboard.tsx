@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, FileText, Hammer, Euro, TrendingUp, LogOut, Moon, Sun, Calendar, Target, CheckCircle2 } from 'lucide-react';
+import { Users, FileText, Hammer, Euro, TrendingUp, LogOut, Moon, Sun, Calendar, Target, CheckCircle2, Download, Mail, User } from 'lucide-react';
 import { StatsCard } from '@/components/StatsCard';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useEffect, useState, useMemo, useRef } from 'react';
@@ -7,7 +7,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import MobileNav from '@/components/MobileNav';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { useClients, useQuotes, useSites, usePayments } from '@/hooks/useSupabaseQuery';
+import { useClients, useQuotes, useSites, usePayments, useEmployees, useTimesheets } from '@/hooks/useSupabaseQuery';
+import { useInvoices, InvoiceWithRelations } from '@/hooks/useInvoices';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/components/ThemeProvider';
@@ -15,6 +16,11 @@ import { ThemeColorPicker } from '@/components/ThemeColorPicker';
 import { AIAssistant } from '@/components/AIAssistant';
 import { GlobalSearch } from '@/components/GlobalSearch';
 import { DataExport } from '@/components/DataExport';
+import { exportEmployeePayrollToPDF } from '@/lib/pdfExport';
+import { exportInvoiceToPDF } from '@/lib/pdfExport';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale/fr';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,6 +50,9 @@ const Dashboard = () => {
   const quotesQuery = useQuotes();
   const sitesQuery = useSites();
   const paymentsQuery = usePayments();
+  const employeesQuery = useEmployees();
+  const timesheetsQuery = useTimesheets();
+  const invoicesQuery = useInvoices();
   
   // 5. Stabiliser user.id pour éviter les changements de référence
   const userId = useMemo(() => user?.id || null, [user?.id]);
@@ -109,6 +118,18 @@ const Dashboard = () => {
   const payments = useMemo(() => {
     return Array.isArray(paymentsQuery.data) ? paymentsQuery.data : [];
   }, [paymentsQuery.data]);
+
+  const employees = useMemo(() => {
+    return Array.isArray(employeesQuery.data) ? employeesQuery.data : [];
+  }, [employeesQuery.data]);
+
+  const timesheets = useMemo(() => {
+    return Array.isArray(timesheetsQuery.data) ? timesheetsQuery.data : [];
+  }, [timesheetsQuery.data]);
+
+  const invoices = useMemo(() => {
+    return Array.isArray(invoicesQuery.data) ? invoicesQuery.data : [];
+  }, [invoicesQuery.data]);
 
   const computedStats = useMemo(() => {
     const activeSites = sites.filter((s: any) => s?.status === 'active').length;
@@ -180,6 +201,58 @@ const Dashboard = () => {
   }, [quotes, sites]);
 
   const COLORS = ['#4ade80', '#60a5fa', '#f59e0b', '#ef4444'];
+
+  // Documents à envoyer
+  const documentsToSend = useMemo(() => {
+    // Fiches de paie à envoyer (employés avec timesheets non payés ou récents)
+    const employeePayrolls = employees
+      .map((employee: any) => {
+        const empTimesheets = timesheets.filter((ts: any) => ts.employee_id === employee.id);
+        const unpaidTimesheets = empTimesheets.filter((ts: any) => ts.status === 'due');
+        const recentTimesheets = empTimesheets.filter((ts: any) => {
+          const date = new Date(ts.date);
+          const thirtyDaysAgo = new Date();
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+          return date >= thirtyDaysAgo;
+        });
+
+        if (unpaidTimesheets.length > 0 || recentTimesheets.length > 0) {
+          return {
+            type: 'employee' as const,
+            id: employee.id,
+            name: `${employee.first_name} ${employee.last_name}`,
+            employee,
+            timesheets: empTimesheets,
+            unpaidCount: unpaidTimesheets.length,
+          };
+        }
+        return null;
+      })
+      .filter(Boolean);
+
+    // Factures à envoyer (non payées ou récentes)
+    const invoicesToSend = invoices
+      .filter((invoice: InvoiceWithRelations) => {
+        // Factures non payées ou envoyées récemment
+        return invoice.status === 'draft' || invoice.status === 'sent' || invoice.status === 'overdue';
+      })
+      .map((invoice: InvoiceWithRelations) => ({
+        type: 'invoice' as const,
+        id: invoice.id,
+        invoice,
+        clientName: invoice.clients
+          ? `${invoice.clients.first_name} ${invoice.clients.last_name}`
+          : 'Client inconnu',
+        amount: invoice.total_amount,
+        status: invoice.status,
+        dueDate: invoice.due_date,
+      }));
+
+    return {
+      employees: employeePayrolls,
+      invoices: invoicesToSend,
+    };
+  }, [employees, timesheets, invoices]);
 
   if (loading) {
     return (
@@ -376,6 +449,146 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              Documents à envoyer
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Fiches de paie pour les employés */}
+            {documentsToSend.employees.length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  Fiches de paie ({documentsToSend.employees.length})
+                </h3>
+                <div className="space-y-2">
+                  {documentsToSend.employees.map((doc: any) => (
+                    <div
+                      key={doc.id}
+                      className="flex items-center justify-between p-2 bg-muted rounded-md"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{doc.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {doc.unpaidCount > 0
+                            ? `${doc.unpaidCount} heure${doc.unpaidCount > 1 ? 's' : ''} non payée${doc.unpaidCount > 1 ? 's' : ''}`
+                            : `${doc.timesheets.length} heure${doc.timesheets.length > 1 ? 's' : ''} enregistrée${doc.timesheets.length > 1 ? 's' : ''}`}
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="ml-2 flex-shrink-0"
+                        onClick={() => {
+                          try {
+                            exportEmployeePayrollToPDF({
+                              id: doc.employee.id,
+                              first_name: doc.employee.first_name,
+                              last_name: doc.employee.last_name,
+                              hourly_rate: doc.employee.hourly_rate,
+                              timesheets: doc.timesheets.map((ts: any) => ({
+                                id: ts.id,
+                                date: ts.date,
+                                hours: ts.hours,
+                                status: ts.status,
+                                paid_date: ts.paid_date,
+                              })),
+                            });
+                            toast.success('Fiche de paie générée');
+                          } catch (error) {
+                            console.error('Erreur lors de la génération du PDF:', error);
+                            toast.error('Erreur lors de la génération du PDF');
+                          }
+                        }}
+                      >
+                        <Download className="h-4 w-4 mr-1" />
+                        PDF
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Factures pour les clients */}
+            {documentsToSend.invoices.length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  Factures ({documentsToSend.invoices.length})
+                </h3>
+                <div className="space-y-2">
+                  {documentsToSend.invoices.map((doc) => (
+                    <div
+                      key={doc.id}
+                      className="flex items-center justify-between p-2 bg-muted rounded-md"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {doc.invoice.invoice_number} - {doc.clientName}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {doc.amount.toFixed(2)}€ • Échéance: {format(new Date(doc.dueDate), 'dd/MM/yyyy', { locale: fr })}
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="ml-2 flex-shrink-0"
+                        onClick={() => {
+                          try {
+                            exportInvoiceToPDF(
+                              {
+                                id: doc.invoice.id,
+                                invoice_number: doc.invoice.invoice_number,
+                                title: doc.invoice.title,
+                                description: doc.invoice.description || null,
+                                amount: doc.invoice.amount,
+                                tax_rate: doc.invoice.tax_rate || null,
+                                tax_amount: doc.invoice.tax_amount,
+                                total_amount: doc.invoice.total_amount,
+                                issue_date: doc.invoice.issue_date,
+                                due_date: doc.invoice.due_date,
+                                status: doc.invoice.status,
+                                client: doc.invoice.clients
+                                  ? {
+                                      first_name: doc.invoice.clients.first_name,
+                                      last_name: doc.invoice.clients.last_name,
+                                      email: doc.invoice.clients.email,
+                                      phone: undefined,
+                                      address: doc.invoice.clients.address || undefined,
+                                    }
+                                  : undefined,
+                              },
+                              userName
+                            );
+                            toast.success('Facture générée');
+                          } catch (error) {
+                            console.error('Erreur lors de la génération du PDF:', error);
+                            toast.error('Erreur lors de la génération du PDF');
+                          }
+                        }}
+                      >
+                        <Download className="h-4 w-4 mr-1" />
+                        PDF
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {documentsToSend.employees.length === 0 && documentsToSend.invoices.length === 0 && (
+              <p className="text-muted-foreground text-sm text-center py-4">
+                Aucun document à envoyer pour le moment
+              </p>
+            )}
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>
