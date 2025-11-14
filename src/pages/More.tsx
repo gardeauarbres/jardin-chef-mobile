@@ -10,6 +10,7 @@ import {
   Settings,
   LogOut,
   Hammer,
+  Building2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -20,6 +21,13 @@ const More = () => {
   const { signOut } = useAuth();
 
   const menuItems = [
+    {
+      title: 'Profil d\'entreprise',
+      description: 'Informations pour vos documents',
+      icon: Building2,
+      route: '/profile',
+      color: 'text-primary',
+    },
     {
       title: 'Chantiers',
       description: 'Gérez vos chantiers',

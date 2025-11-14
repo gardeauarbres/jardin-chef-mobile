@@ -19,8 +19,8 @@ import { DataExport } from '@/components/DataExport';
 import { Notifications } from '@/components/Notifications';
 import { AdvancedStats } from '@/components/AdvancedStats';
 import { ReminderSystem } from '@/components/ReminderSystem';
-import { exportEmployeePayrollToPDF } from '@/lib/pdfExport';
-import { exportInvoiceToPDF } from '@/lib/pdfExport';
+import { exportEmployeePayrollToPDF, exportInvoiceToPDF } from '@/lib/pdfExport';
+import { useCompanyProfile } from '@/hooks/useCompanyProfile';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale/fr';
@@ -61,6 +61,7 @@ const Dashboard = () => {
   const employeesQuery = useEmployees();
   const timesheetsQuery = useTimesheets();
   const invoicesQuery = useInvoices();
+  const { data: companyProfile } = useCompanyProfile();
   
   // 5. Stabiliser user.id pour éviter les changements de référence
   const userId = useMemo(() => user?.id || null, [user?.id]);
@@ -469,19 +470,23 @@ const Dashboard = () => {
                         className="ml-2 flex-shrink-0"
                         onClick={() => {
                           try {
-                            exportEmployeePayrollToPDF({
-                              id: doc.employee.id,
-                              first_name: doc.employee.first_name,
-                              last_name: doc.employee.last_name,
-                              hourly_rate: doc.employee.hourly_rate,
-                              timesheets: doc.timesheets.map((ts: any) => ({
-                                id: ts.id,
-                                date: ts.date,
-                                hours: ts.hours,
-                                status: ts.status,
-                                paid_date: ts.paid_date,
-                              })),
-                            });
+                            exportEmployeePayrollToPDF(
+                              {
+                                id: doc.employee.id,
+                                first_name: doc.employee.first_name,
+                                last_name: doc.employee.last_name,
+                                hourly_rate: doc.employee.hourly_rate,
+                                timesheets: doc.timesheets.map((ts: any) => ({
+                                  id: ts.id,
+                                  date: ts.date,
+                                  hours: ts.hours,
+                                  status: ts.status,
+                                  paid_date: ts.paid_date,
+                                })),
+                              },
+                              userName,
+                              companyProfile || undefined
+                            );
                             toast.success('Fiche de paie générée');
                           } catch (error) {
                             console.error('Erreur lors de la génération du PDF:', error);
@@ -552,7 +557,8 @@ const Dashboard = () => {
                                     }
                                   : undefined,
                               },
-                              userName
+                              userName,
+                              companyProfile || undefined
                             );
                             toast.success('Facture générée');
                           } catch (error) {

@@ -24,6 +24,7 @@ const Reminders = lazy(() => import("./pages/Reminders"));
 const EmailTemplatesPage = lazy(() => import("./pages/EmailTemplatesPage"));
 const Inventory = lazy(() => import("./pages/Inventory"));
 const More = lazy(() => import("./pages/More"));
+const Profile = lazy(() => import("./pages/Profile"));
 const Auth = lazy(() => import("./pages/Auth"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -80,6 +81,7 @@ const App = () => (
             <Route path="/email-templates" element={<EmailTemplatesPage />} />
             <Route path="/inventory" element={<Inventory />} />
             <Route path="/more" element={<More />} />
+            <Route path="/profile" element={<Profile />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

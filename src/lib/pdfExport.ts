@@ -1,5 +1,17 @@
 import jsPDF from 'jspdf';
 
+export interface CompanyProfile {
+  company_name?: string;
+  address?: string;
+  city?: string;
+  postal_code?: string;
+  siret?: string;
+  tva_number?: string;
+  email?: string;
+  phone?: string;
+  is_auto_entrepreneur?: boolean;
+}
+
 interface InvoiceData {
   id: string;
   invoice_number: string;
@@ -21,7 +33,7 @@ interface InvoiceData {
   };
 }
 
-export const exportInvoiceToPDF = (invoice: InvoiceData, userName?: string) => {
+export const exportInvoiceToPDF = (invoice: InvoiceData, userName?: string, companyProfile?: CompanyProfile) => {
   const doc = new jsPDF();
   
   // Couleurs
@@ -38,11 +50,42 @@ export const exportInvoiceToPDF = (invoice: InvoiceData, userName?: string) => {
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(24);
   doc.setFont('helvetica', 'bold');
-  doc.text('JARDIN CHEF', 20, 25);
+  doc.text(companyProfile?.company_name || 'JARDIN CHEF', 20, 25);
   
-  doc.setFontSize(12);
+  doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text('Gestion pour Paysagistes', 20, 32);
+  if (companyProfile?.address || companyProfile?.city) {
+    const addressLine = [companyProfile?.address, companyProfile?.postal_code, companyProfile?.city].filter(Boolean).join(', ');
+    doc.text(addressLine, 20, 32);
+  } else {
+    doc.text('Gestion pour Paysagistes', 20, 32);
+  }
+  
+  // Ajout des informations de l'entreprise (SIRET, email, etc.) en haut à droite
+  if (companyProfile) {
+    yPos = 25;
+    const rightX = 140;
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    if (companyProfile.siret) {
+      doc.text(`SIRET: ${companyProfile.siret}`, rightX, yPos);
+      yPos += 4;
+    }
+    if (companyProfile.tva_number) {
+      doc.text(`TVA: ${companyProfile.tva_number}`, rightX, yPos);
+      yPos += 4;
+    } else if (companyProfile.is_auto_entrepreneur) {
+      doc.text('TVA non applicable', rightX, yPos);
+      yPos += 4;
+    }
+    if (companyProfile.email) {
+      doc.text(companyProfile.email, rightX, yPos);
+      yPos += 4;
+    }
+    if (companyProfile.phone) {
+      doc.text(companyProfile.phone, rightX, yPos);
+    }
+  }
   
   yPos = 50;
   
@@ -177,7 +220,7 @@ export const exportInvoiceToPDF = (invoice: InvoiceData, userName?: string) => {
 /**
  * Génère un PDF de facture et le retourne en base64 (pour envoi par email)
  */
-export const generateInvoicePDFBase64 = (invoice: InvoiceData, userName?: string): string => {
+export const generateInvoicePDFBase64 = (invoice: InvoiceData, userName?: string, companyProfile?: CompanyProfile): string => {
   const doc = new jsPDF();
   
   // Couleurs
@@ -194,11 +237,42 @@ export const generateInvoicePDFBase64 = (invoice: InvoiceData, userName?: string
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(24);
   doc.setFont('helvetica', 'bold');
-  doc.text('JARDIN CHEF', 20, 25);
+  doc.text(companyProfile?.company_name || 'JARDIN CHEF', 20, 25);
   
-  doc.setFontSize(12);
+  doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text('Gestion pour Paysagistes', 20, 32);
+  if (companyProfile?.address || companyProfile?.city) {
+    const addressLine = [companyProfile?.address, companyProfile?.postal_code, companyProfile?.city].filter(Boolean).join(', ');
+    doc.text(addressLine, 20, 32);
+  } else {
+    doc.text('Gestion pour Paysagistes', 20, 32);
+  }
+  
+  // Ajout des informations de l'entreprise (SIRET, email, etc.) en haut à droite
+  if (companyProfile) {
+    yPos = 25;
+    const rightX = 140;
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    if (companyProfile.siret) {
+      doc.text(`SIRET: ${companyProfile.siret}`, rightX, yPos);
+      yPos += 4;
+    }
+    if (companyProfile.tva_number) {
+      doc.text(`TVA: ${companyProfile.tva_number}`, rightX, yPos);
+      yPos += 4;
+    } else if (companyProfile.is_auto_entrepreneur) {
+      doc.text('TVA non applicable', rightX, yPos);
+      yPos += 4;
+    }
+    if (companyProfile.email) {
+      doc.text(companyProfile.email, rightX, yPos);
+      yPos += 4;
+    }
+    if (companyProfile.phone) {
+      doc.text(companyProfile.phone, rightX, yPos);
+    }
+  }
   
   yPos = 50;
   
@@ -541,7 +615,7 @@ interface EmployeePayrollData {
   }>;
 }
 
-export const exportEmployeePayrollToPDF = (employee: EmployeePayrollData, userName?: string) => {
+export const exportEmployeePayrollToPDF = (employee: EmployeePayrollData, userName?: string, companyProfile?: CompanyProfile) => {
   const doc = new jsPDF();
   
   // Couleurs
@@ -558,11 +632,35 @@ export const exportEmployeePayrollToPDF = (employee: EmployeePayrollData, userNa
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(24);
   doc.setFont('helvetica', 'bold');
-  doc.text('JARDIN CHEF', 20, 25);
+  doc.text(companyProfile?.company_name || 'JARDIN CHEF', 20, 25);
   
-  doc.setFontSize(12);
+  doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text('Gestion pour Paysagistes', 20, 32);
+  if (companyProfile?.address || companyProfile?.city) {
+    const addressLine = [companyProfile?.address, companyProfile?.postal_code, companyProfile?.city].filter(Boolean).join(', ');
+    doc.text(addressLine, 20, 32);
+  } else {
+    doc.text('Gestion pour Paysagistes', 20, 32);
+  }
+  
+  // Ajout des informations de l'entreprise (SIRET, email, etc.) en haut à droite
+  if (companyProfile) {
+    yPos = 25;
+    const rightX = 140;
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    if (companyProfile.siret) {
+      doc.text(`SIRET: ${companyProfile.siret}`, rightX, yPos);
+      yPos += 4;
+    }
+    if (companyProfile.email) {
+      doc.text(companyProfile.email, rightX, yPos);
+      yPos += 4;
+    }
+    if (companyProfile.phone) {
+      doc.text(companyProfile.phone, rightX, yPos);
+    }
+  }
   
   yPos = 50;
   
