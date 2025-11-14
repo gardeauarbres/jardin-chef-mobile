@@ -354,32 +354,68 @@ export default function Invoices() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      onClick={() => {
-                        try {
-                          exportInvoices(filteredAndSortedInvoices, 'excel');
-                          toast.success('Export Excel réussi');
-                        } catch (error) {
-                          toast.error('Erreur lors de l\'export');
-                        }
-                      }}
-                    >
-                      <FileSpreadsheet className="h-4 w-4 mr-2" />
-                      Exporter en Excel
+                    <DropdownMenuItem onClick={toggleSelectMode}>
+                      {isSelectMode ? (
+                        <>
+                          <Square className="h-4 w-4 mr-2" />
+                          Désactiver la sélection
+                        </>
+                      ) : (
+                        <>
+                          <CheckSquare className="h-4 w-4 mr-2" />
+                          Sélectionner pour exporter
+                        </>
+                      )}
                     </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        try {
-                          exportInvoices(filteredAndSortedInvoices, 'csv');
-                          toast.success('Export CSV réussi');
-                        } catch (error) {
-                          toast.error('Erreur lors de l\'export');
-                        }
-                      }}
-                    >
-                      <FileText className="h-4 w-4 mr-2" />
-                      Exporter en CSV
-                    </DropdownMenuItem>
+                    {isSelectMode && (
+                      <>
+                        <DropdownMenuItem onClick={selectAllInvoices}>
+                          <CheckSquare className="h-4 w-4 mr-2" />
+                          Tout sélectionner
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={deselectAllInvoices}>
+                          <Square className="h-4 w-4 mr-2" />
+                          Tout désélectionner
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleExportSelected('excel')}
+                          disabled={selectedInvoices.size === 0}
+                        >
+                          <FileSpreadsheet className="h-4 w-4 mr-2" />
+                          Exporter sélection ({selectedInvoices.size})
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                    {!isSelectMode && (
+                      <>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            try {
+                              exportInvoices(filteredAndSortedInvoices, 'excel');
+                              toast.success('Export Excel réussi');
+                            } catch (error) {
+                              toast.error('Erreur lors de l\'export');
+                            }
+                          }}
+                        >
+                          <FileSpreadsheet className="h-4 w-4 mr-2" />
+                          Exporter tout en Excel
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            try {
+                              exportInvoices(filteredAndSortedInvoices, 'csv');
+                              toast.success('Export CSV réussi');
+                            } catch (error) {
+                              toast.error('Erreur lors de l\'export');
+                            }
+                          }}
+                        >
+                          <FileText className="h-4 w-4 mr-2" />
+                          Exporter tout en CSV
+                        </DropdownMenuItem>
+                      </>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
                 <div className="w-full md:w-48">
