@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, FileText, Hammer, Euro, TrendingUp, LogOut, Moon, Sun, Calendar, Target, CheckCircle2, Download, Mail, User } from 'lucide-react';
+import { Users, FileText, Hammer, Euro, TrendingUp, LogOut, Moon, Sun, Calendar, Target, CheckCircle2, Download, Mail, User, X, Eye, EyeOff } from 'lucide-react';
 import { StatsCard } from '@/components/StatsCard';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useEffect, useState, useMemo, useRef } from 'react';
@@ -40,6 +40,11 @@ const Dashboard = () => {
   
   // 2. useState (toujours appelés)
   const [userName, setUserName] = useState<string>("");
+  const [hiddenCards, setHiddenCards] = useState<Set<string>>(() => {
+    // Charger les cartes masquées depuis localStorage
+    const saved = localStorage.getItem('dashboard-hidden-cards');
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  });
   
   // 3. Refs pour stabilité
   const hasNavigatedRef = useRef(false);
@@ -290,6 +295,15 @@ const Dashboard = () => {
                 <div>
                   <h1 className="text-2xl font-bold">{userName || 'Chargement...'}</h1>
                   <p className="text-sm opacity-90 mt-1">Tableau de bord</p>
+                  {hiddenCards.size > 0 && (
+                    <button
+                      onClick={showAllCards}
+                      className="text-xs mt-1 opacity-75 hover:opacity-100 underline flex items-center gap-1"
+                    >
+                      <Eye className="h-3 w-3" />
+                      Afficher toutes les cartes ({hiddenCards.size} masquée{hiddenCards.size > 1 ? 's' : ''})
+                    </button>
+                  )}
                 </div>
                        <div className="flex items-center gap-2">
                          <div className="hidden md:block">
@@ -386,13 +400,22 @@ const Dashboard = () => {
         </div>
 
         {/* Section Documents à envoyer */}
-        <Card className="border-2 border-primary/20">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <FileText className="h-5 w-5 text-primary" />
-              Documents à envoyer
-            </CardTitle>
-          </CardHeader>
+        {!hiddenCards.has('documents') && (
+          <Card className="border-2 border-primary/20 relative">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 right-2 h-8 w-8 opacity-60 hover:opacity-100"
+              onClick={() => toggleCard('documents')}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg pr-10">
+                <FileText className="h-5 w-5 text-primary" />
+                Documents à envoyer
+              </CardTitle>
+            </CardHeader>
           <CardContent className="space-y-4">
             {/* Fiches de paie pour les employés */}
             <div>
@@ -526,16 +549,26 @@ const Dashboard = () => {
               )}
             </div>
           </CardContent>
-        </Card>
+          </Card>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-primary" />
-                Statut des devis
-              </CardTitle>
-            </CardHeader>
+          {!hiddenCards.has('quotes-status') && (
+            <Card className="relative">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-2 right-2 h-8 w-8 opacity-60 hover:opacity-100 z-10"
+                onClick={() => toggleCard('quotes-status')}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 pr-10">
+                  <FileText className="h-5 w-5 text-primary" />
+                  Statut des devis
+                </CardTitle>
+              </CardHeader>
             <CardContent>
               {quotes.length === 0 ? (
                 <p className="text-muted-foreground text-sm text-center py-8">
@@ -553,15 +586,25 @@ const Dashboard = () => {
                 </ResponsiveContainer>
               )}
             </CardContent>
-          </Card>
+            </Card>
+          )}
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Hammer className="h-5 w-5 text-success" />
-                Statut des chantiers
-              </CardTitle>
-            </CardHeader>
+          {!hiddenCards.has('sites-status') && (
+            <Card className="relative">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-2 right-2 h-8 w-8 opacity-60 hover:opacity-100 z-10"
+                onClick={() => toggleCard('sites-status')}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 pr-10">
+                  <Hammer className="h-5 w-5 text-success" />
+                  Statut des chantiers
+                </CardTitle>
+              </CardHeader>
             <CardContent>
               {sites.length === 0 ? (
                 <p className="text-muted-foreground text-sm text-center py-8">
@@ -589,13 +632,23 @@ const Dashboard = () => {
                 </ResponsiveContainer>
               )}
             </CardContent>
-          </Card>
+            </Card>
+          )}
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
+        {!hiddenCards.has('overview') && (
+          <Card className="relative">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 right-2 h-8 w-8 opacity-60 hover:opacity-100 z-10"
+              onClick={() => toggleCard('overview')}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 pr-10">
+                <TrendingUp className="h-5 w-5 text-primary" />
               Vue d'ensemble
             </CardTitle>
           </CardHeader>
@@ -606,7 +659,8 @@ const Dashboard = () => {
                 : `Vous avez ${clients.length} client${clients.length > 1 ? 's' : ''}, ${quotes.length} devis, et ${sites.length} chantier${sites.length > 1 ? 's' : ''}.`}
             </p>
           </CardContent>
-        </Card>
+          </Card>
+        )}
       </div>
 
       <MobileNav />
