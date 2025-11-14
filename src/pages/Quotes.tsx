@@ -225,7 +225,8 @@ const Quotes = () => {
       setIsSelectMode(false);
       setSelectedQuotes(new Set());
     } catch (error) {
-      toast.error('Erreur lors de l\'export');
+      console.error('Erreur export devis:', error);
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de l\'export');
     }
   };
 
@@ -335,7 +336,8 @@ const Quotes = () => {
                             exportQuotes(filteredQuotes, 'excel');
                             toast.success('Export Excel réussi');
                           } catch (error) {
-                            toast.error('Erreur lors de l\'export');
+                            console.error('Erreur export devis Excel:', error);
+                            toast.error(error instanceof Error ? error.message : 'Erreur lors de l\'export');
                           }
                         }}
                       >
@@ -348,7 +350,8 @@ const Quotes = () => {
                             exportQuotes(filteredQuotes, 'csv');
                             toast.success('Export CSV réussi');
                           } catch (error) {
-                            toast.error('Erreur lors de l\'export');
+                            console.error('Erreur export devis CSV:', error);
+                            toast.error(error instanceof Error ? error.message : 'Erreur lors de l\'export');
                           }
                         }}
                       >

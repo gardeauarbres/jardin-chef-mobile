@@ -262,7 +262,8 @@ export default function Invoices() {
       setIsSelectMode(false);
       setSelectedInvoices(new Set());
     } catch (error) {
-      toast.error('Erreur lors de l\'export');
+      console.error('Erreur export factures:', error);
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de l\'export');
     }
   };
 
@@ -394,7 +395,8 @@ export default function Invoices() {
                               exportInvoices(filteredAndSortedInvoices, 'excel');
                               toast.success('Export Excel réussi');
                             } catch (error) {
-                              toast.error('Erreur lors de l\'export');
+                              console.error('Erreur export factures Excel:', error);
+                              toast.error(error instanceof Error ? error.message : 'Erreur lors de l\'export');
                             }
                           }}
                         >
@@ -407,7 +409,8 @@ export default function Invoices() {
                               exportInvoices(filteredAndSortedInvoices, 'csv');
                               toast.success('Export CSV réussi');
                             } catch (error) {
-                              toast.error('Erreur lors de l\'export');
+                              console.error('Erreur export factures CSV:', error);
+                              toast.error(error instanceof Error ? error.message : 'Erreur lors de l\'export');
                             }
                           }}
                         >

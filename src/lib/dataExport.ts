@@ -101,24 +101,34 @@ export function exportClients(
   }>,
   format: 'excel' | 'csv' = 'excel'
 ): void {
-  const exportData = clients.map((client) => ({
-    'ID': client.id,
-    'Prénom': client.first_name,
-    'Nom': client.last_name,
-    'Téléphone': client.phone || '',
-    'Email': client.email || '',
-    'Adresse': client.address || '',
-    'Date de création': client.created_at
-      ? format(new Date(client.created_at), 'dd/MM/yyyy', { locale: fr })
-      : '',
-  }));
+  if (!clients || clients.length === 0) {
+    throw new Error('Aucun client à exporter');
+  }
 
-  const filename = `clients_${format(new Date(), 'yyyy-MM-dd', { locale: fr })}`;
+  try {
+    const exportData = clients.map((client) => ({
+      'ID': client.id || '',
+      'Prénom': client.first_name || '',
+      'Nom': client.last_name || '',
+      'Téléphone': client.phone || '',
+      'Email': client.email || '',
+      'Adresse': client.address || '',
+      'Date de création': client.created_at
+        ? format(new Date(client.created_at), 'dd/MM/yyyy', { locale: fr })
+        : '',
+    }));
 
-  if (format === 'excel') {
-    exportToExcel(exportData, filename, 'Clients');
-  } else {
-    exportToCSV(exportData, filename);
+    const today = new Date();
+    const filename = `clients_${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    if (format === 'excel') {
+      exportToExcel(exportData, filename, 'Clients');
+    } else {
+      exportToCSV(exportData, filename);
+    }
+  } catch (error) {
+    console.error('Erreur dans exportClients:', error);
+    throw error;
   }
 }
 
@@ -140,33 +150,43 @@ export function exportQuotes(
   }>,
   format: 'excel' | 'csv' = 'excel'
 ): void {
-  const statusLabels: Record<string, string> = {
-    draft: 'Brouillon',
-    sent: 'Envoyé',
-    accepted: 'Accepté',
-    rejected: 'Refusé',
-  };
+  if (!quotes || quotes.length === 0) {
+    throw new Error('Aucun devis à exporter');
+  }
 
-  const exportData = quotes.map((quote) => ({
-    'ID': quote.id,
-    'Titre': quote.title,
-    'Description': quote.description || '',
-    'Montant HT (€)': quote.amount.toFixed(2),
-    'Client': quote.clients
-      ? `${quote.clients.first_name} ${quote.clients.last_name}`
-      : '',
-    'Statut': statusLabels[quote.status] || quote.status,
-    'Date de création': format(new Date(quote.created_at), 'dd/MM/yyyy', {
-      locale: fr,
-    }),
-  }));
+  try {
+    const statusLabels: Record<string, string> = {
+      draft: 'Brouillon',
+      sent: 'Envoyé',
+      accepted: 'Accepté',
+      rejected: 'Refusé',
+    };
 
-  const filename = `devis_${format(new Date(), 'yyyy-MM-dd', { locale: fr })}`;
+    const exportData = quotes.map((quote) => ({
+      'ID': quote.id || '',
+      'Titre': quote.title || '',
+      'Description': quote.description || '',
+      'Montant HT (€)': quote.amount ? quote.amount.toFixed(2) : '0.00',
+      'Client': quote.clients
+        ? `${quote.clients.first_name || ''} ${quote.clients.last_name || ''}`.trim()
+        : '',
+      'Statut': statusLabels[quote.status] || quote.status || '',
+      'Date de création': quote.created_at
+        ? format(new Date(quote.created_at), 'dd/MM/yyyy', { locale: fr })
+        : '',
+    }));
 
-  if (format === 'excel') {
-    exportToExcel(exportData, filename, 'Devis');
-  } else {
-    exportToCSV(exportData, filename);
+    const today = new Date();
+    const filename = `devis_${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    if (format === 'excel') {
+      exportToExcel(exportData, filename, 'Devis');
+    } else {
+      exportToCSV(exportData, filename);
+    }
+  } catch (error) {
+    console.error('Erreur dans exportQuotes:', error);
+    throw error;
   }
 }
 
@@ -196,47 +216,57 @@ export function exportInvoices(
   }>,
   format: 'excel' | 'csv' = 'excel'
 ): void {
-  const statusLabels: Record<string, string> = {
-    draft: 'Brouillon',
-    sent: 'Envoyée',
-    paid: 'Payée',
-    overdue: 'En retard',
-    cancelled: 'Annulée',
-  };
+  if (!invoices || invoices.length === 0) {
+    throw new Error('Aucune facture à exporter');
+  }
 
-  const exportData = invoices.map((invoice) => ({
-    'Numéro': invoice.invoice_number,
-    'Titre': invoice.title,
-    'Description': invoice.description || '',
-    'Montant HT (€)': invoice.amount.toFixed(2),
-    'Taux TVA (%)': invoice.tax_rate ? invoice.tax_rate.toFixed(2) : '0.00',
-    'Montant TVA (€)': invoice.tax_amount.toFixed(2),
-    'Montant TTC (€)': invoice.total_amount.toFixed(2),
-    'Client': invoice.clients
-      ? `${invoice.clients.first_name} ${invoice.clients.last_name}`
-      : '',
-    'Email client': invoice.clients?.email || '',
-    'Statut': statusLabels[invoice.status] || invoice.status,
-    'Date d\'émission': format(new Date(invoice.issue_date), 'dd/MM/yyyy', {
-      locale: fr,
-    }),
-    'Date d\'échéance': format(new Date(invoice.due_date), 'dd/MM/yyyy', {
-      locale: fr,
-    }),
-    'Date de paiement': invoice.paid_date
-      ? format(new Date(invoice.paid_date), 'dd/MM/yyyy', { locale: fr })
-      : '',
-    'Date d\'envoi': invoice.sent_date
-      ? format(new Date(invoice.sent_date), 'dd/MM/yyyy', { locale: fr })
-      : '',
-  }));
+  try {
+    const statusLabels: Record<string, string> = {
+      draft: 'Brouillon',
+      sent: 'Envoyée',
+      paid: 'Payée',
+      overdue: 'En retard',
+      cancelled: 'Annulée',
+    };
 
-  const filename = `factures_${format(new Date(), 'yyyy-MM-dd', { locale: fr })}`;
+    const exportData = invoices.map((invoice) => ({
+      'Numéro': invoice.invoice_number || '',
+      'Titre': invoice.title || '',
+      'Description': invoice.description || '',
+      'Montant HT (€)': invoice.amount ? invoice.amount.toFixed(2) : '0.00',
+      'Taux TVA (%)': invoice.tax_rate ? invoice.tax_rate.toFixed(2) : '0.00',
+      'Montant TVA (€)': invoice.tax_amount ? invoice.tax_amount.toFixed(2) : '0.00',
+      'Montant TTC (€)': invoice.total_amount ? invoice.total_amount.toFixed(2) : '0.00',
+      'Client': invoice.clients
+        ? `${invoice.clients.first_name || ''} ${invoice.clients.last_name || ''}`.trim()
+        : '',
+      'Email client': invoice.clients?.email || '',
+      'Statut': statusLabels[invoice.status] || invoice.status || '',
+      'Date d\'émission': invoice.issue_date
+        ? format(new Date(invoice.issue_date), 'dd/MM/yyyy', { locale: fr })
+        : '',
+      'Date d\'échéance': invoice.due_date
+        ? format(new Date(invoice.due_date), 'dd/MM/yyyy', { locale: fr })
+        : '',
+      'Date de paiement': invoice.paid_date
+        ? format(new Date(invoice.paid_date), 'dd/MM/yyyy', { locale: fr })
+        : '',
+      'Date d\'envoi': invoice.sent_date
+        ? format(new Date(invoice.sent_date), 'dd/MM/yyyy', { locale: fr })
+        : '',
+    }));
 
-  if (format === 'excel') {
-    exportToExcel(exportData, filename, 'Factures');
-  } else {
-    exportToCSV(exportData, filename);
+    const today = new Date();
+    const filename = `factures_${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    if (format === 'excel') {
+      exportToExcel(exportData, filename, 'Factures');
+    } else {
+      exportToCSV(exportData, filename);
+    }
+  } catch (error) {
+    console.error('Erreur dans exportInvoices:', error);
+    throw error;
   }
 }
 
