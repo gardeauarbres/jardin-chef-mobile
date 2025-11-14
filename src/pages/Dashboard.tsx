@@ -240,13 +240,18 @@ const Dashboard = () => {
       }));
 
     // Debug: log pour vérifier les données
-    console.log('Documents à envoyer:', {
-      employees: employeePayrolls.length,
-      invoices: invoicesToSend.length,
+    console.log('=== DEBUG DOCUMENTS À ENVOYER ===');
+    console.log('Employees raw:', employees);
+    console.log('Timesheets raw:', timesheets);
+    console.log('Invoices raw:', invoices);
+    console.log('Documents calculés:', {
+      employeesAvecHeures: employeePayrolls.length,
+      facturesTotal: invoicesToSend.length,
       totalEmployees: employees.length,
       totalTimesheets: timesheets.length,
       totalInvoices: invoices.length,
     });
+    console.log('=================================');
 
     return {
       employees: employeePayrolls,
@@ -387,12 +392,15 @@ const Dashboard = () => {
         </div>
 
         {/* Section Documents à envoyer - Toujours visible en haut */}
-        <Card className="border-2 border-primary/20">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <FileText className="h-5 w-5 text-primary" />
-              Documents à envoyer
+        <Card className="border-4 border-green-500 bg-green-50 dark:bg-green-900/20">
+          <CardHeader className="bg-green-100 dark:bg-green-800/30">
+            <CardTitle className="flex items-center gap-2 text-xl font-bold text-green-700 dark:text-green-300">
+              <FileText className="h-6 w-6 text-green-600" />
+              📄 DOCUMENTS À ENVOYER - TEST
             </CardTitle>
+            <p className="text-sm text-green-600 dark:text-green-400 mt-2">
+              Cette section devrait être visible. Si vous la voyez, le problème est résolu !
+            </p>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Fiches de paie pour les employés */}
