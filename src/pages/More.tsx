@@ -13,6 +13,7 @@ import {
   Building2,
   Clock,
   Receipt,
+  HelpCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -23,6 +24,13 @@ const More = () => {
   const { signOut } = useAuth();
 
   const menuItems = [
+    {
+      title: 'FAQ & Aide',
+      description: 'Questions fréquentes et assistance',
+      icon: HelpCircle,
+      route: '/faq',
+      color: 'text-green-500',
+    },
     {
       title: 'Profil d\'entreprise',
       description: 'Informations pour vos documents',
