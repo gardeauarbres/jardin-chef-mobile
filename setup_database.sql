@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS public.materials (
 -- Create material_movements table
 CREATE TABLE IF NOT EXISTS public.material_movements (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   material_id UUID NOT NULL REFERENCES public.materials(id) ON DELETE CASCADE,
   type TEXT NOT NULL CHECK (type IN ('in', 'out', 'adjustment')),
   quantity NUMERIC(10,2) NOT NULL,
@@ -59,23 +60,16 @@ CREATE POLICY "Users can delete their own materials"
 -- RLS Policies for material_movements
 CREATE POLICY "Users can view their own material movements"
   ON public.material_movements FOR SELECT
-  USING (EXISTS (
-    SELECT 1 FROM public.materials
-    WHERE materials.id = material_movements.material_id
-    AND materials.user_id = auth.uid()
-  ));
+  USING (auth.uid() = user_id);
 
 CREATE POLICY "Users can insert their own material movements"
   ON public.material_movements FOR INSERT
-  WITH CHECK (EXISTS (
-    SELECT 1 FROM public.materials
-    WHERE materials.id = material_movements.material_id
-    AND materials.user_id = auth.uid()
-  ));
+  WITH CHECK (auth.uid() = user_id);
 
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_materials_user_id ON public.materials(user_id);
 CREATE INDEX IF NOT EXISTS idx_materials_category ON public.materials(category);
+CREATE INDEX IF NOT EXISTS idx_material_movements_user_id ON public.material_movements(user_id);
 CREATE INDEX IF NOT EXISTS idx_material_movements_material_id ON public.material_movements(material_id);
 CREATE INDEX IF NOT EXISTS idx_material_movements_site_id ON public.material_movements(site_id);
 
