@@ -249,6 +249,16 @@ $$;
 | Fonction | Statut | search_path | Security Type |
 |----------|--------|-------------|---------------|
 | `update_legal_acceptances_updated_at` | ✅ **SÉCURISÉ** | `public, pg_catalog` | `SECURITY INVOKER` |
+| `update_company_profile_updated_at` | ✅ **SÉCURISÉ** | `public, pg_catalog` | `SECURITY INVOKER` |
+| `update_material_stock_on_site_usage` | ✅ **SÉCURISÉ** | `public, pg_catalog` | `SECURITY INVOKER` |
+| `restore_material_stock_on_site_removal` | ✅ **SÉCURISÉ** | `public, pg_catalog` | `SECURITY INVOKER` |
+| `adjust_material_stock_on_site_update` | ✅ **SÉCURISÉ** | `public, pg_catalog` | `SECURITY INVOKER` |
+| `update_updated_at_column` | ✅ **SÉCURISÉ** | `public, pg_catalog` | `SECURITY INVOKER` |
+| `generate_invoice_number` | ✅ **SÉCURISÉ** | `public, pg_catalog` | `SECURITY INVOKER` |
+| `create_material_movement_for_site` | ✅ **SÉCURISÉ** | `public, pg_catalog` | `SECURITY INVOKER` |
+| `restore_material_on_delete` | ✅ **SÉCURISÉ** | `public, pg_catalog` | `SECURITY INVOKER` |
+
+### 🎯 Résultat : **10/10 Fonctions Sécurisées** ✅
 
 ---
 
