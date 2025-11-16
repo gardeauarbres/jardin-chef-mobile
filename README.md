@@ -6,6 +6,19 @@ Une application web moderne et complète pour la gestion d'entreprise de paysagi
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)
 
+---
+
+## 📚 Documentation Complète
+
+👉 **[Consultez l'index complet de la documentation](docs/INDEX.md)** pour tous les guides détaillés
+
+- 🔧 [Guides d'installation](docs/setup/)
+- ✨ [Fonctionnalités](docs/features/)
+- 👨‍💻 [Développement](docs/development/)
+- 🚀 [Déploiement](docs/deployment/)
+
+---
+
 ## 📋 Table des matières
 
 - [Fonctionnalités](#-fonctionnalités)
