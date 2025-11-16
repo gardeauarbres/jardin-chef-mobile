@@ -189,10 +189,10 @@ BEGIN
         -- Vérifier si la table existe ET a la colonne updated_at
         IF EXISTS (
             SELECT 1 
-            FROM information_schema.columns 
-            WHERE table_schema = 'public' 
-            AND table_name = table_name
-            AND column_name = 'updated_at'
+            FROM information_schema.columns c
+            WHERE c.table_schema = 'public' 
+            AND c.table_name = table_name
+            AND c.column_name = 'updated_at'
         ) THEN
             -- Supprimer l'ancien trigger
             EXECUTE format('DROP TRIGGER IF EXISTS update_%I_updated_at ON public.%I', table_name, table_name);
