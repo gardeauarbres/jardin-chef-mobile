@@ -20,6 +20,7 @@ import { Pagination } from '@/components/Pagination';
 import { SortableList, SortOption } from '@/components/SortableList';
 import { DateRangeFilter } from '@/components/DateFilter';
 import MobileNav from '@/components/MobileNav';
+import { AIAssistant } from '@/components/AIAssistant';
 import { useNavigate } from 'react-router-dom';
 import {
   AlertDialog,
@@ -300,9 +301,12 @@ const Quotes = () => {
             <h1 className="text-2xl font-bold">Devis</h1>
             <p className="text-sm opacity-90 mt-1">{filteredQuotes.length} devis{filteredQuotes.length !== quotes.length ? ` sur ${quotes.length}` : ''}</p>
           </div>
-          <Button onClick={() => navigate('/quotes/new')} size="icon" variant="secondary">
-            <Plus className="h-5 w-5" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <AIAssistant />
+            <Button onClick={() => navigate('/quotes/new')} size="icon" variant="secondary">
+              <Plus className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
       </header>
 

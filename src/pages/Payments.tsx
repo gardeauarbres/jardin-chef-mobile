@@ -9,6 +9,7 @@ import { Pagination } from '@/components/Pagination';
 import { SortableList, SortOption } from '@/components/SortableList';
 import { DateRangeFilter } from '@/components/DateFilter';
 import MobileNav from '@/components/MobileNav';
+import { AIAssistant } from '@/components/AIAssistant';
 import { Euro, Calendar, Trash2, Plus, Search, Filter, FileSpreadsheet, FileText, Upload, CheckSquare, Square } from 'lucide-react';
 import {
   AlertDialog,
@@ -302,6 +303,7 @@ const Payments = () => {
             <p className="text-sm opacity-90 mt-1">{filteredPayments.length} paiement{filteredPayments.length !== 1 ? 's' : ''}{filteredPayments.length !== payments.length ? ` sur ${payments.length}` : ''}</p>
           </div>
           <div className="flex gap-2">
+            <AIAssistant />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button size="icon" variant="secondary">

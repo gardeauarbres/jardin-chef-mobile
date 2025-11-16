@@ -11,6 +11,7 @@ import { SortableList, SortOption } from '@/components/SortableList';
 import { DateRangeFilter } from '@/components/DateFilter';
 import MobileNav from '@/components/MobileNav';
 import { NavigationDialog } from '@/components/NavigationDialog';
+import { AIAssistant } from '@/components/AIAssistant';
 import { useNavigate } from 'react-router-dom';
 import {
   AlertDialog,
@@ -341,8 +342,13 @@ const Clients = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       <header className="bg-primary text-primary-foreground p-6">
-        <h1 className="text-2xl font-bold">Clients</h1>
-        <p className="text-sm opacity-90 mt-1">{clients.length} client{clients.length !== 1 ? 's' : ''}</p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Clients</h1>
+            <p className="text-sm opacity-90 mt-1">{clients.length} client{clients.length !== 1 ? 's' : ''}</p>
+          </div>
+          <AIAssistant />
+        </div>
       </header>
 
       <div className="p-4 space-y-4">
