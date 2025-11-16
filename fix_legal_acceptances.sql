@@ -67,13 +67,18 @@ CREATE POLICY "Users can update their own legal acceptances"
     WITH CHECK (auth.uid() = user_id);
 
 -- Function to automatically update updated_at
+-- SECURITY: Uses SECURITY INVOKER and fixed search_path to prevent privilege escalation
 CREATE OR REPLACE FUNCTION public.update_legal_acceptances_updated_at()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER 
+LANGUAGE plpgsql
+SECURITY INVOKER
+SET search_path = public, pg_catalog
+AS $$
 BEGIN
     NEW.updated_at = NOW();
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 -- Trigger for updated_at
 DROP TRIGGER IF EXISTS update_legal_acceptances_updated_at ON public.legal_acceptances;
