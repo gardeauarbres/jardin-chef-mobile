@@ -6,6 +6,7 @@ import { lazy, Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
+import LegalOnboardingWrapper from "@/components/LegalOnboardingWrapper";
 
 // Code splitting - Lazy load des pages pour réduire le bundle initial
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -26,6 +27,10 @@ const Inventory = lazy(() => import("./pages/Inventory"));
 const More = lazy(() => import("./pages/More"));
 const Profile = lazy(() => import("./pages/Profile"));
 const FAQPage = lazy(() => import("./pages/FAQPage"));
+const LegalHub = lazy(() => import("./pages/legal/LegalHub"));
+const PrivacyPolicy = lazy(() => import("./pages/legal/PrivacyPolicy"));
+const LegalNotice = lazy(() => import("./pages/legal/LegalNotice"));
+const TermsOfService = lazy(() => import("./pages/legal/TermsOfService"));
 const Auth = lazy(() => import("./pages/Auth"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -65,38 +70,44 @@ const App = () => (
         <Toaster />
         <BrowserRouter>
           <KeyboardShortcuts />
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/clients" element={<Clients />} />
-            <Route path="/clients/new" element={<ClientForm />} />
-            <Route path="/clients/:id" element={<ClientForm />} />
-            <Route path="/quotes" element={<Quotes />} />
-            <Route path="/quotes/new" element={<QuoteForm />} />
-            <Route path="/quotes/:id" element={<QuoteForm />} />
-            <Route path="/sites" element={<Sites />} />
-            <Route path="/sites/new" element={<SiteForm />} />
-            <Route path="/sites/:id" element={<SiteForm />} />
-            <Route path="/employees" element={<Employees />} />
-            <Route path="/payments" element={<Payments />} />
-            <Route path="/payments/new" element={<PaymentForm />} />
-            <Route path="/payments/:id" element={<PaymentForm />} />
-            <Route path="/calendar" element={<Calendar />} />
-            <Route path="/invoices" element={<Invoices />} />
-            <Route path="/reminders" element={<Reminders />} />
-            <Route path="/email-templates" element={<EmailTemplatesPage />} />
-            <Route path="/inventory" element={<Inventory />} />
-            <Route path="/more" element={<More />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/faq" element={<FAQPage />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+          <LegalOnboardingWrapper>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/clients" element={<Clients />} />
+              <Route path="/clients/new" element={<ClientForm />} />
+              <Route path="/clients/:id" element={<ClientForm />} />
+              <Route path="/quotes" element={<Quotes />} />
+              <Route path="/quotes/new" element={<QuoteForm />} />
+              <Route path="/quotes/:id" element={<QuoteForm />} />
+              <Route path="/sites" element={<Sites />} />
+              <Route path="/sites/new" element={<SiteForm />} />
+              <Route path="/sites/:id" element={<SiteForm />} />
+              <Route path="/employees" element={<Employees />} />
+              <Route path="/payments" element={<Payments />} />
+              <Route path="/payments/new" element={<PaymentForm />} />
+              <Route path="/payments/:id" element={<PaymentForm />} />
+              <Route path="/calendar" element={<Calendar />} />
+              <Route path="/invoices" element={<Invoices />} />
+              <Route path="/reminders" element={<Reminders />} />
+              <Route path="/email-templates" element={<EmailTemplatesPage />} />
+              <Route path="/inventory" element={<Inventory />} />
+              <Route path="/more" element={<More />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/faq" element={<FAQPage />} />
+              <Route path="/legal" element={<LegalHub />} />
+              <Route path="/legal/privacy" element={<PrivacyPolicy />} />
+              <Route path="/legal/legal-notice" element={<LegalNotice />} />
+              <Route path="/legal/terms" element={<TermsOfService />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
+          </LegalOnboardingWrapper>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
   </ThemeProvider>
 );
 

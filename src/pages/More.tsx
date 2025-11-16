@@ -14,6 +14,7 @@ import {
   Clock,
   Receipt,
   HelpCircle,
+  Shield,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -30,6 +31,13 @@ const More = () => {
       icon: HelpCircle,
       route: '/faq',
       color: 'text-green-500',
+    },
+    {
+      title: 'Documents légaux',
+      description: 'Politique de confidentialité, CGU, mentions légales',
+      icon: Shield,
+      route: '/legal',
+      color: 'text-blue-500',
     },
     {
       title: 'Profil d\'entreprise',
