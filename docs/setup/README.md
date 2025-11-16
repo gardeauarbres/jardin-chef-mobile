@@ -51,29 +51,17 @@ Ce dossier contient tous les guides et scripts nécessaires pour configurer l'ap
 
 ## 🗄️ Scripts SQL
 
-### **[setup_database.sql](setup_database.sql)** 📄
-**Script complet** de création de toutes les tables.
+### **Scripts SQL Sécurisés** 🔒
 
-**Contenu** :
-- Materials + Material Movements
-- Site Materials + Triggers
-- Company Profile
-- Legal Acceptances
-- Toutes les RLS policies
+Les scripts SQL de configuration ont été **retirés de GitHub** pour des raisons de sécurité.
 
-**⚠️ Attention** : Peut générer des erreurs si les tables existent déjà.
+**Pour obtenir les scripts** :
+- ✅ Utilisez le SQL inline dans **[QUICK_SETUP.md](QUICK_SETUP.md)**
+- ✅ Ou contactez : **chantiers@gardeauarbres.fr**
 
----
-
-### **[setup_database_clean.sql](setup_database_clean.sql)** ✨
-**Script nettoyé** avec gestion des duplications.
-
-**Contenu** :
-- Mêmes tables que `setup_database.sql`
-- ✅ `DROP POLICY IF EXISTS` pour éviter les erreurs
-- ✅ Vérifications d'existence
-
-**👍 Recommandé** : Utiliser celui-ci pour éviter les erreurs de duplication.
+**Scripts disponibles localement** (si vous avez cloné le projet) :
+- `setup_database.sql` - Script complet
+- `setup_database_clean.sql` - Script recommandé (avec gestion duplications)
 
 ---
 
@@ -81,17 +69,14 @@ Ce dossier contient tous les guides et scripts nécessaires pour configurer l'ap
 
 ### Étape 1 : Choisir votre méthode
 
-**Option A : Via le Dashboard Supabase** (Recommandé)
+**Méthode : Via le Dashboard Supabase** (Recommandé)
 1. Allez sur [supabase.com](https://supabase.com)
 2. SQL Editor → New query
-3. Copiez le contenu de `QUICK_SETUP.md` (SQL inline)
-4. Run
+3. Copiez le contenu SQL de `QUICK_SETUP.md`
+4. Collez dans l'éditeur SQL
+5. Cliquez sur "Run"
 
-**Option B : Script SQL séparé**
-1. Téléchargez `setup_database_clean.sql`
-2. SQL Editor → New query
-3. Copiez-collez le contenu
-4. Run
+**Note** : Les scripts SQL séparés ont été retirés de GitHub pour la sécurité. Utilisez le SQL inline dans QUICK_SETUP.md.
 
 ---
 

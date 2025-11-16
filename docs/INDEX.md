@@ -27,8 +27,11 @@ Guides d'installation et de configuration initiale :
 Documentation des fonctionnalités spécifiques :
 
 - **[Legal System](features/LEGAL_SYSTEM_SETUP.md)** - Système légal gamifié (RGPD, CGU, mentions légales)
-- **[Email Setup](features/EMAIL_SETUP_GUIDE.md)** - Configuration des emails (Resend, SendGrid)
 - **[Profile Setup](features/PROFILE_SETUP.md)** - Profil d'entreprise
+
+**🔒 Guides protégés** (disponibles localement uniquement) :
+- Email Setup - Configuration des emails (Resend, SendGrid)
+- Resend DNS Setup - Configuration DNS avancée
 
 ### 👨‍💻 Développement
 
@@ -77,7 +80,7 @@ docs/
 3. [Deployment Guide](deployment/DEPLOYMENT.md) - Déploiement production
 
 ### "Je veux configurer une fonctionnalité"
-- **Emails** → [Email Setup](features/EMAIL_SETUP_GUIDE.md)
+- **Emails** → 🔒 Guide protégé (disponible localement)
 - **Documents légaux** → [Legal System](features/LEGAL_SYSTEM_SETUP.md)
 - **Profil entreprise** → [Profile Setup](features/PROFILE_SETUP.md)
 - **Gestion stocks** → [Inventory Setup](setup/INVENTORY_SETUP.md)
@@ -89,7 +92,7 @@ docs/
 
 ### "Je veux déployer en production"
 1. [Deployment Guide](deployment/DEPLOYMENT.md) - Guide complet
-2. [Email Setup](features/EMAIL_SETUP_GUIDE.md) - Configuration emails
+2. 🔒 Email Setup - Configuration emails (disponible localement)
 3. [Legal System](features/LEGAL_SYSTEM_SETUP.md) - Documents légaux
 
 ---
@@ -131,7 +134,7 @@ docs/
 |--------|--------------|
 | Installation | [Quick Setup](setup/QUICK_SETUP.md) |
 | Déploiement | [Deployment](deployment/DEPLOYMENT.md) |
-| Emails | [Email Setup](features/EMAIL_SETUP_GUIDE.md) |
+| Emails | 🔒 Protégé (local uniquement) |
 | Légal | [Legal System](features/LEGAL_SYSTEM_SETUP.md) |
 | Architecture | [Architecture](development/ARCHITECTURE.md) |
 | Performance | [Performance](development/PERFORMANCE.md) |

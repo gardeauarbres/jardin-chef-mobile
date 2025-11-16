@@ -27,3 +27,9 @@ dist-ssr
 .env
 .env.local
 .env.production
+
+# Protected directories (contain SQL scripts and documentation)
+_archived_scripts/
+docs/setup/*.sql
+docs/features/RESEND_DNS_SETUP.md
+docs/features/EMAIL_SETUP_GUIDE.md
