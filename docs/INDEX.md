@@ -8,7 +8,7 @@ Bienvenue dans la documentation complète de Jardin Chef !
 
 Pour commencer avec Jardin Chef, consultez :
 - [README principal](../README.md) - Vue d'ensemble du projet
-- [Guide de déploiement](../DEPLOY.md) - Déployer l'application
+- [Guide de déploiement](deployment/DEPLOY.md) - Déployer l'application
 
 ---
 
