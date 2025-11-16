@@ -207,7 +207,7 @@ export default function LegalHub() {
               </p>
               <p>
                 <strong>❓ Questions :</strong> Pour toute question, contactez-nous à 
-                <strong> legal@jardinchef.com</strong>
+                <strong> alain@gardeauarbres.fr</strong>
               </p>
             </div>
           </CardContent>

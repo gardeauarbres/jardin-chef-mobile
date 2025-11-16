@@ -134,7 +134,7 @@ export default function PrivacyPolicy() {
               <h3 className="text-lg font-semibold">8. Contact</h3>
               <p className="text-muted-foreground leading-relaxed">
                 Pour toute question relative à vos données personnelles ou pour exercer vos droits,
-                contactez-nous à : <strong>privacy@jardinchef.com</strong>
+                contactez-nous à : <strong>alain@gardeauarbres.fr</strong>
               </p>
             </section>
 

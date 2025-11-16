@@ -44,22 +44,20 @@ export default function LegalNotice() {
               <h3 className="text-lg font-semibold">1. Éditeur de l'application</h3>
               <div className="bg-muted/50 rounded-lg p-4 space-y-2 text-sm">
                 <p><strong>Nom de l'application :</strong> Jardin Chef</p>
-                <p><strong>Éditeur :</strong> [Nom de votre société]</p>
-                <p><strong>Forme juridique :</strong> [SAS, SARL, Auto-entrepreneur, etc.]</p>
-                <p><strong>Capital social :</strong> [Montant] €</p>
-                <p><strong>Siège social :</strong> [Adresse complète]</p>
-                <p><strong>SIRET :</strong> [Numéro SIRET]</p>
-                <p><strong>RCS :</strong> [Ville d'immatriculation]</p>
-                <p><strong>Numéro de TVA :</strong> [Numéro TVA intracommunautaire]</p>
-                <p><strong>Email :</strong> contact@jardinchef.com</p>
-                <p><strong>Téléphone :</strong> [Numéro de téléphone]</p>
+                <p><strong>Éditeur :</strong> Association Gard Eau Arbres</p>
+                <p><strong>Forme juridique :</strong> Association loi 1901 à but non lucratif</p>
+                <p><strong>Siège social :</strong> Le Bourg, 46120 Thémines, France</p>
+                <p><strong>Président :</strong> Alain Ramon</p>
+                <p><strong>Email :</strong> alain@gardeauarbres.fr</p>
+                <p><strong>Téléphone :</strong> 07 45 29 39 80</p>
+                <p><strong>Site web :</strong> <a href="https://www.gardeauarbres.fr" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">www.gardeauarbres.fr</a></p>
               </div>
             </section>
 
             <section className="space-y-3">
               <h3 className="text-lg font-semibold">2. Directeur de la publication</h3>
               <p className="text-muted-foreground">
-                Le directeur de la publication est : <strong>[Nom et Prénom]</strong>
+                Le directeur de la publication est : <strong>Alain Ramon</strong>, Président de l'association Gard Eau Arbres
               </p>
             </section>
 
@@ -126,7 +124,7 @@ export default function LegalNotice() {
               <h3 className="text-lg font-semibold">8. Contact</h3>
               <p className="text-muted-foreground leading-relaxed">
                 Pour toute question concernant les mentions légales, vous pouvez nous contacter à : 
-                <strong> legal@jardinchef.com</strong>
+                <strong> alain@gardeauarbres.fr</strong>
               </p>
             </section>
 
