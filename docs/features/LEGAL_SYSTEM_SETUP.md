@@ -277,7 +277,7 @@ Le système est **conforme au RGPD** :
 ## 📞 Support
 
 Pour toute question :
-- **Email** : alain@gardeauarbres.fr
+- **Email** : chantiers@gardeauarbres.fr
 - **FAQ** : `/faq` dans l'application
 - **Assistant IA** : Bouton ✨ Sparkles
 

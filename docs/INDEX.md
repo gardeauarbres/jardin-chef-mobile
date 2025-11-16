@@ -100,7 +100,7 @@ docs/
 
 - **FAQ** : Consultez la [FAQ intégrée](../src/pages/FAQPage.tsx) dans l'application
 - **Assistant IA** : Utilisez le bouton ✨ Sparkles dans l'app
-- **Email** : alain@gardeauarbres.fr
+- **Email** : chantiers@gardeauarbres.fr
 - **Issues GitHub** : [Ouvrir une issue](https://github.com/gardeauarbres/jardin-chef-mobile/issues)
 
 ---

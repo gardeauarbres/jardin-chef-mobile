@@ -191,7 +191,7 @@ export default function TermsOfService() {
             <section className="space-y-3">
               <h3 className="text-lg font-semibold">13. Contact</h3>
               <p className="text-muted-foreground leading-relaxed">
-                Pour toute question concernant ces CGU, contactez-nous à : <strong>alain@gardeauarbres.fr</strong>
+                Pour toute question concernant ces CGU, contactez-nous à : <strong>chantiers@gardeauarbres.fr</strong>
               </p>
             </section>
 

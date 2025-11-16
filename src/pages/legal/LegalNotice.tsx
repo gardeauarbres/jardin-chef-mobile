@@ -48,7 +48,7 @@ export default function LegalNotice() {
                 <p><strong>Forme juridique :</strong> Association loi 1901 à but non lucratif</p>
                 <p><strong>Siège social :</strong> Le Bourg, 46120 Thémines, France</p>
                 <p><strong>Président :</strong> Alain Ramon</p>
-                <p><strong>Email :</strong> alain@gardeauarbres.fr</p>
+                <p><strong>Email :</strong> chantiers@gardeauarbres.fr</p>
                 <p><strong>Téléphone :</strong> 07 45 29 39 80</p>
                 <p><strong>Site web :</strong> <a href="https://www.gardeauarbres.fr" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">www.gardeauarbres.fr</a></p>
               </div>
@@ -124,7 +124,7 @@ export default function LegalNotice() {
               <h3 className="text-lg font-semibold">8. Contact</h3>
               <p className="text-muted-foreground leading-relaxed">
                 Pour toute question concernant les mentions légales, vous pouvez nous contacter à : 
-                <strong> alain@gardeauarbres.fr</strong>
+                <strong> chantiers@gardeauarbres.fr</strong>
               </p>
             </section>
 

@@ -207,7 +207,7 @@ export default function LegalHub() {
               </p>
               <p>
                 <strong>❓ Questions :</strong> Pour toute question, contactez-nous à 
-                <strong> alain@gardeauarbres.fr</strong>
+                <strong> chantiers@gardeauarbres.fr</strong>
               </p>
             </div>
           </CardContent>
