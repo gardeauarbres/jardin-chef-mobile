@@ -247,8 +247,6 @@ COMMENT ON FUNCTION public.generate_invoice_number() IS
 'Generate a unique invoice number with format INV-YYYY-NNNN. 
 SECURITY: Uses SECURITY INVOKER and fixed search_path.';
 
-RAISE NOTICE '✅ Fonction generate_invoice_number créée';
-
 -- =====================================================
 -- 7. create_material_movement_for_site
 -- =====================================================
