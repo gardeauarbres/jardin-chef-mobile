@@ -182,20 +182,20 @@ DECLARE
         'clients', 'quotes', 'sites', 'employees', 
         'payments', 'invoices', 'materials'
     ];
-    table_name TEXT;
+    v_table_name TEXT;
 BEGIN
-    FOREACH table_name IN ARRAY tables_with_updated_at
+    FOREACH v_table_name IN ARRAY tables_with_updated_at
     LOOP
         -- Vérifier si la table existe ET a la colonne updated_at
         IF EXISTS (
             SELECT 1 
             FROM information_schema.columns c
             WHERE c.table_schema = 'public' 
-            AND c.table_name = table_name
+            AND c.table_name = v_table_name
             AND c.column_name = 'updated_at'
         ) THEN
             -- Supprimer l'ancien trigger
-            EXECUTE format('DROP TRIGGER IF EXISTS update_%I_updated_at ON public.%I', table_name, table_name);
+            EXECUTE format('DROP TRIGGER IF EXISTS update_%I_updated_at ON public.%I', v_table_name, v_table_name);
             
             -- Créer le nouveau trigger
             EXECUTE format('
@@ -203,11 +203,11 @@ BEGIN
                     BEFORE UPDATE ON public.%I
                     FOR EACH ROW
                     EXECUTE FUNCTION public.update_updated_at_column()
-            ', table_name, table_name);
+            ', v_table_name, v_table_name);
             
-            RAISE NOTICE '✅ Trigger update_%_updated_at créé', table_name;
+            RAISE NOTICE '✅ Trigger update_%_updated_at créé', v_table_name;
         ELSE
-            RAISE NOTICE '⚠️  Table % n''existe pas ou n''a pas la colonne updated_at, trigger ignoré', table_name;
+            RAISE NOTICE '⚠️  Table % n''existe pas ou n''a pas la colonne updated_at, trigger ignoré', v_table_name;
         END IF;
     END LOOP;
 END $$;
